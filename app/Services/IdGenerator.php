@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Models\Checkin;
 use App\Models\Checkout;
 use App\Models\Kamar;
-use App\Models\Pengeluaran;
 use App\Models\Reservasi;
 use Illuminate\Support\Carbon;
 
@@ -56,14 +55,5 @@ class IdGenerator
         $seq = $last ? (int) substr($last, 2) + 1 : 1;
 
         return 'KM'.str_pad((string) $seq, 4, '0', STR_PAD_LEFT);
-    }
-
-    public static function pengeluaran(): string
-    {
-        $last = Pengeluaran::orderBy('id', 'desc')->value('id');
-
-        $seq = $last ? $last + 1 : 1;
-
-        return 'PG'.str_pad((string) $seq, 4, '0', STR_PAD_LEFT);
     }
 }

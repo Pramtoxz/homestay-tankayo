@@ -1,7 +1,7 @@
 import { Link } from '@inertiajs/react';
 import { ArrowRight } from 'lucide-react';
 import heroImg from '@/assets/images/hero.webp';
-import { Badge } from '@/components/ui/badge';
+import { GonjongMotif } from '@/components/gonjong-motif';
 import { Button } from '@/components/ui/button';
 import { login } from '@/routes';
 import { bookingHref, bookingLabel } from './types';
@@ -13,7 +13,7 @@ type Props = {
 
 export function Hero({ user }: Props) {
     return (
-        <section className="relative isolate overflow-hidden min-h-[480px] sm:min-h-[560px] lg:min-h-[640px]">
+        <section className="relative isolate overflow-hidden min-h-[520px] sm:min-h-[600px] lg:min-h-[680px]">
             {/* Background image */}
             <img
                 src={heroImg}
@@ -21,38 +21,38 @@ export function Hero({ user }: Props) {
                 className="absolute inset-0 -z-20 h-full w-full object-cover"
             />
 
-            {/* Gradient overlay — heavier at bottom for text readability */}
+            {/* Gradient overlay — teal danau menuju ink, bukan hijau admin */}
             <div
                 className="pointer-events-none absolute inset-0 -z-10"
                 style={{
                     background:
-                        'linear-gradient(to bottom, rgba(35,59,47,0.35) 0%, rgba(35,59,47,0.55) 40%, rgba(35,59,47,0.85) 100%)',
+                        'linear-gradient(to bottom, rgba(31,92,99,0.30) 0%, rgba(31,92,99,0.55) 45%, rgba(19,35,33,0.92) 100%)',
                 }}
             />
 
-            <div className="relative mx-auto max-w-6xl px-4 sm:px-6 py-20 sm:py-28 lg:py-36 text-center">
-                <Badge
-                    variant="secondary"
-                    className="mb-6 bg-white/15 text-white/95 border-white/20 text-xs tracking-wide backdrop-blur-sm"
-                >
-                    Danau Singkarak &bull; Tanah Datar, Sumatera Barat
-                </Badge>
+            <div className="relative mx-auto max-w-6xl px-4 sm:px-6 pt-24 sm:pt-32 lg:pt-40 pb-28 sm:pb-32 text-center">
+                <div className="mb-6 flex items-center justify-center gap-3 text-[11px] tracking-[0.2em] text-white/70 uppercase">
+                    <span className="h-px w-8 bg-white/30" />
+                    Danau Singkarak &middot; Tanah Datar
+                    <span className="h-px w-8 bg-white/30" />
+                </div>
 
-                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white tracking-tight leading-tight max-w-3xl mx-auto drop-shadow-md">
-                    Ketenteraman Tepian Danau,<br className="hidden sm:block" />
-                    <span className="text-accent/90">Kenyamanan Bernuansa Minang</span>
+                <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl font-medium text-white tracking-tight leading-[1.1] max-w-3xl mx-auto text-balance">
+                    Ketenteraman tepian danau,
+                    <br className="hidden sm:block" />
+                    <span className="italic text-accent">bernuansa Minangkabau</span>
                 </h1>
 
-                <p className="mt-5 max-w-xl mx-auto text-sm sm:text-base text-white/80 leading-relaxed drop-shadow-sm">
+                <p className="mt-6 max-w-xl mx-auto text-sm sm:text-base text-white/75 leading-relaxed">
                     Penginapan syariah menghadap Danau Singkarak, Jl. Padang Laweh Malalo, Tanah Datar.
-                    Udara sejuk pegunungan, hamparan air tenang, dan keramahan khas Minangkabau.
+                    Udara sejuk pegunungan, hamparan air tenang, dan keramahan khas Minang.
                 </p>
 
-                <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+                <div className="mt-9 flex flex-col sm:flex-row items-center justify-center gap-3">
                     <Button
                         asChild
                         size="lg"
-                        className="bg-accent hover:bg-accent/90 text-accent-foreground px-8 text-sm font-semibold shadow-lg"
+                        className="bg-accent hover:bg-accent/90 text-accent-foreground px-8 text-sm font-semibold shadow-lg shadow-black/20"
                     >
                         <Link href={bookingHref(user)}>
                             {bookingLabel(user)}
@@ -71,6 +71,13 @@ export function Hero({ user }: Props) {
                     )}
                 </div>
             </div>
+
+            {/* Siluet gonjong — jahitan menuju section berikutnya */}
+            <GonjongMotif
+                spires={7}
+                variant="fill"
+                className="absolute inset-x-0 bottom-0 h-14 sm:h-20 w-full text-background"
+            />
         </section>
     );
 }

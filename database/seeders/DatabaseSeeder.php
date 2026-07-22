@@ -5,7 +5,6 @@ namespace Database\Seeders;
 use App\Models\Checkin;
 use App\Models\Checkout;
 use App\Models\Kamar;
-use App\Models\Pengeluaran;
 use App\Models\Reservasi;
 use App\Models\Tamu;
 use App\Models\User;
@@ -17,8 +16,8 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         User::factory()->admin()->create([
-            'name' => 'Admin',
-            'email' => 'admin@gmail.com',
+            'name' => 'Resepsionis',
+            'email' => 'resepsionis@gmail.com',
             'password' => Hash::make('password'),
         ]);
 
@@ -64,7 +63,5 @@ class DatabaseSeeder extends Seeder
                 ]);
             }
         }
-
-        Pengeluaran::factory(30)->create();
     }
 }

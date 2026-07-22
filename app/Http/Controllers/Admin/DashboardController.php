@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Checkin;
 use App\Models\Checkout;
 use App\Models\Kamar;
-use App\Models\Pengeluaran;
 use App\Models\Reservasi;
 use App\Models\Tamu;
 use App\Services\BookingService;
@@ -30,7 +29,6 @@ class DashboardController extends Controller
                 'reservasi_hari_ini' => Reservasi::whereDate('created_at', $today)->count(),
                 'checkin_hari_ini' => Checkin::whereDate('created_at', $today)->count(),
                 'checkout_hari_ini' => Checkout::whereDate('tglcheckout', $today)->count(),
-                'total_pengeluaran' => Pengeluaran::sum('total'),
                 'pendapatan_bulan_ini' => Checkout::whereMonth('tglcheckout', now()->month)
                     ->whereYear('tglcheckout', now()->year)
                     ->sum('grandtotal'),

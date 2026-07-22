@@ -5,7 +5,6 @@ use App\Http\Controllers\Admin\CheckoutController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\KamarController;
 use App\Http\Controllers\Admin\LaporanController;
-use App\Http\Controllers\Admin\PengeluaranController;
 use App\Http\Controllers\Admin\ReservasiController;
 use App\Http\Controllers\Admin\TamuController;
 use App\Http\Controllers\OnlineController;
@@ -35,12 +34,16 @@ Route::middleware('auth')->group(function () {
         Route::get('checkout-search/checkin', [CheckoutController::class, 'searchCheckin'])->name('checkout.search-checkin');
         Route::get('checkout/{checkout}/faktur', [CheckoutController::class, 'faktur'])->name('checkout.faktur');
         Route::resource('checkout', CheckoutController::class)->only(['index', 'create', 'store', 'show']);
-        Route::resource('pengeluaran', PengeluaranController::class)->except(['show']);
     });
 
     // Laporan — admin + pimpinan
-    Route::middleware('role:admin,pimpinan')->group(function () {
-        Route::get('laporan', [LaporanController::class, 'index'])->name('laporan.index');
+    Route::middleware('role:admin,pimpinan')->prefix('laporan')->name('laporan.')->group(function () {
+        Route::get('kamar', [LaporanController::class, 'kamar'])->name('kamar');
+        Route::get('tamu', [LaporanController::class, 'tamu'])->name('tamu');
+        Route::get('reservasi', [LaporanController::class, 'reservasi'])->name('reservasi');
+        Route::get('checkin', [LaporanController::class, 'checkin'])->name('checkin');
+        Route::get('checkout', [LaporanController::class, 'checkout'])->name('checkout');
+        Route::get('{type}/export-pdf', [LaporanController::class, 'exportPdf'])->name('export-pdf');
     });
 
     // User portal

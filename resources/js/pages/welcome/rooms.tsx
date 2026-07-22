@@ -17,10 +17,13 @@ export function Rooms({ rooms, user }: Props) {
     }
 
     return (
-        <section className="bg-muted/40">
-            <div className="mx-auto max-w-6xl px-4 sm:px-6 py-16 sm:py-20">
-                <div className="text-center mb-12">
-                    <h2 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">
+        <section className="bg-muted/50">
+            <div className="mx-auto max-w-6xl px-4 sm:px-6 py-20 sm:py-28">
+                <div className="text-center mb-14">
+                    <span className="text-xs tracking-[0.2em] text-accent uppercase">
+                        Akomodasi
+                    </span>
+                    <h2 className="mt-3 font-display text-3xl sm:text-4xl font-medium text-foreground tracking-tight">
                         Pilihan Kamar
                     </h2>
                     <p className="mt-3 text-sm text-muted-foreground max-w-lg mx-auto">

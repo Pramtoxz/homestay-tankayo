@@ -1,5 +1,5 @@
 import { Head } from '@inertiajs/react';
-import { BedDouble, Users, CalendarCheck, CalendarMinus, Wallet, TrendingUp } from 'lucide-react';
+import { BedDouble, Users, CalendarCheck, CalendarMinus, TrendingUp } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { dashboard } from '@/routes';
@@ -12,7 +12,6 @@ type Stats = {
     reservasi_hari_ini: number;
     checkin_hari_ini: number;
     checkout_hari_ini: number;
-    total_pengeluaran: number;
     pendapatan_bulan_ini: number;
 };
 
@@ -79,16 +78,6 @@ export default function Dashboard({ stats, reservasi_hari_ini, checkin_today, ch
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">{formatRupiah(stats.pendapatan_bulan_ini)}</div>
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between pb-2">
-                            <CardTitle className="text-sm font-medium">Pengeluaran Total</CardTitle>
-                            <Wallet className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{formatRupiah(stats.total_pengeluaran)}</div>
                         </CardContent>
                     </Card>
                 </div>

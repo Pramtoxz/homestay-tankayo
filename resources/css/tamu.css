@@ -1,0 +1,71 @@
+/*
+ * Token override untuk halaman tamu (welcome, portal, auth) — TERPISAH dari
+ * palet admin di app.css. Diaktifkan lewat class .theme-tamu di root
+ * (welcome.tsx, PortalLayout, AuthLayout), JANGAN dipakai di AppLayout admin.
+ * Identitas: Danau Singkarak (teal) + benang songket Minangkabau (gold).
+ */
+
+@theme {
+    --font-display:
+        'Newsreader', ui-serif, Georgia, 'Times New Roman', serif;
+}
+
+.theme-tamu {
+    --background: #FBF7EF;
+    --foreground: #1B2E2A;
+
+    --card: #FFFFFF;
+    --card-foreground: #1B2E2A;
+
+    --popover: #FFFFFF;
+    --popover-foreground: #1B2E2A;
+
+    --primary: #1F5C63;
+    --primary-foreground: #FFFFFF;
+
+    --secondary: #DCE6DF;
+    --secondary-foreground: #1B2E2A;
+
+    --accent: #B8863E;
+    --accent-foreground: #FFFFFF;
+
+    --muted: #F1ECE1;
+    --muted-foreground: #6B7570;
+
+    --destructive: #A6503F;
+    --destructive-foreground: #FFFFFF;
+
+    --border: #E4DCC8;
+    --input: #E4DCC8;
+    --ring: #B8863E;
+}
+
+.theme-tamu.dark {
+    --background: #132321;
+    --foreground: #F3EFE6;
+
+    --card: #1A2E2B;
+    --card-foreground: #F3EFE6;
+
+    --popover: #1A2E2B;
+    --popover-foreground: #F3EFE6;
+
+    --primary: #4FA3AC;
+    --primary-foreground: #10201E;
+
+    --secondary: #22403E;
+    --secondary-foreground: #F3EFE6;
+
+    --accent: #D9A857;
+    --accent-foreground: #10201E;
+
+    --muted: #1E3532;
+    --muted-foreground: #A9B8B2;
+
+    --destructive: #D98A7A;
+    --destructive-foreground: #10201E;
+
+    --border: #2A423F;
+    --input: #2A423F;
+    --ring: #D9A857;
+}

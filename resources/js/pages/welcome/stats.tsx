@@ -1,21 +1,18 @@
-import { BedDouble, Mountain, ShieldCheck, Users } from 'lucide-react';
-
 const stats = [
-    { value: '30+', label: 'Kamar Tersedia', icon: BedDouble },
-    { value: '5', label: 'Tipe Kamar', icon: Mountain },
-    { value: '100%', label: 'Syariah Compliant', icon: ShieldCheck },
-    { value: '24/7', label: 'Resepsionis', icon: Users },
+    { value: '30+', label: 'Kamar tersedia' },
+    { value: '5', label: 'Tipe kamar' },
+    { value: '100%', label: 'Syariah compliant' },
+    { value: '24/7', label: 'Resepsionis' },
 ];
 
 export function Stats() {
     return (
-        <section className="bg-background">
+        <section className="bg-secondary/50">
             <div className="mx-auto max-w-6xl px-4 sm:px-6 py-14">
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 text-center">
+                <div className="grid grid-cols-2 divide-y divide-x-0 sm:divide-y-0 sm:divide-x lg:grid-cols-4 divide-border text-center">
                     {stats.map((s) => (
-                        <div key={s.label} className="flex flex-col items-center gap-2">
-                            <s.icon className="h-5 w-5 text-accent mb-1" />
-                            <span className="text-2xl sm:text-3xl font-bold text-primary tabular-nums">
+                        <div key={s.label} className="flex flex-col items-center gap-1 px-4 py-4 sm:py-0">
+                            <span className="font-display text-3xl sm:text-4xl font-medium text-primary tabular-nums">
                                 {s.value}
                             </span>
                             <span className="text-xs text-muted-foreground">{s.label}</span>

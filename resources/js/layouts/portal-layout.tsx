@@ -34,16 +34,16 @@ export default function PortalLayout({
     const { url } = usePage();
 
     return (
-        <div className="flex min-h-svh flex-col bg-background">
+        <div className="theme-tamu flex min-h-svh flex-col bg-background text-foreground">
             <header className="sticky top-0 z-40 border-b bg-background">
                 <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
                     <Link href="/portal" className="flex shrink-0 items-center gap-2">
                         <img
                             src="/assets/images/tankayo.png"
                             alt="Tankayo"
-                            className="h-8 w-8 rounded-md object-cover"
+                            className="h-8 w-8 rounded-full object-cover"
                         />
-                        <span className="hidden text-sm font-semibold sm:inline">Portal Tamu</span>
+                        <span className="hidden font-display text-base font-medium sm:inline">Portal Tamu</span>
                     </Link>
 
                     <nav className="flex items-center gap-1">

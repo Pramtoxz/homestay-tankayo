@@ -19,7 +19,7 @@ export default function Welcome() {
     const user = auth.user ?? null;
 
     return (
-        <>
+        <div className="theme-tamu bg-background text-foreground">
             <Head title="Beranda">
                 <meta
                     name="description"
@@ -34,6 +34,6 @@ export default function Welcome() {
             <Stats />
             <Cta user={user} />
             <Footer />
-        </>
+        </div>
     );
 }

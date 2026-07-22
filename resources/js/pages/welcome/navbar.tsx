@@ -10,19 +10,19 @@ type Props = {
 
 export function Navbar({ user }: Props) {
     return (
-        <nav className="sticky top-0 z-50 border-b border-white/10 bg-primary/95 backdrop-blur-md">
+        <nav className="sticky top-0 z-50 border-b border-primary-foreground/10 bg-primary">
             <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
                 <Link href="/" className="flex items-center gap-2.5">
                     <img
                         src="/assets/images/tankayo.png"
                         alt="Tankayo"
-                        className="h-9 w-9 rounded-md object-cover"
+                        className="h-9 w-9 rounded-full object-cover ring-1 ring-primary-foreground/20"
                     />
                     <div className="leading-tight">
-                        <span className="block text-sm font-semibold text-primary-foreground">
-                           Homestay Tankayo
+                        <span className="block font-display text-base font-medium text-primary-foreground">
+                            Tankayo
                         </span>
-                        <span className="block text-[11px] text-primary-foreground/60">
+                        <span className="block text-[10px] tracking-[0.18em] text-primary-foreground/55 uppercase">
                             EcoPark Syariah
                         </span>
                     </div>
@@ -32,9 +32,8 @@ export function Navbar({ user }: Props) {
                     {user ? (
                         <Button
                             asChild
-                            variant="secondary"
                             size="sm"
-                            className="bg-white/15 text-white hover:bg-white/25 border-0"
+                            className="bg-accent text-accent-foreground hover:bg-accent/90"
                         >
                             <Link href={dashboardHref(user)}>Dashboard</Link>
                         </Button>
@@ -44,14 +43,14 @@ export function Navbar({ user }: Props) {
                                 asChild
                                 variant="ghost"
                                 size="sm"
-                                className="text-white/80 hover:text-white hover:bg-white/10"
+                                className="text-primary-foreground/80 hover:bg-primary-foreground/10 hover:text-primary-foreground"
                             >
                                 <Link href={login()}>Masuk</Link>
                             </Button>
                             <Button
                                 asChild
                                 size="sm"
-                                className="bg-accent hover:bg-accent/90 text-accent-foreground"
+                                className="bg-accent text-accent-foreground hover:bg-accent/90"
                             >
                                 <Link href={register()}>Daftar</Link>
                             </Button>

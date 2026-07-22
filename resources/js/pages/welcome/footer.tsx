@@ -9,9 +9,11 @@ export function Footer() {
                         <img
                             src="/assets/images/tankayo.png"
                             alt="Tankayo"
-                            className="h-6 w-6 rounded object-cover"
+                            className="h-6 w-6 rounded-full object-cover"
                         />
-                        <span>&copy; {new Date().getFullYear()} Eco Park Syariah Tankayo</span>
+                        <span className="font-display italic">
+                            &copy; {new Date().getFullYear()} Eco Park Syariah Tankayo
+                        </span>
                     </div>
                     <div className="flex items-center gap-1.5">
                         <MapPin className="h-3.5 w-3.5" />
