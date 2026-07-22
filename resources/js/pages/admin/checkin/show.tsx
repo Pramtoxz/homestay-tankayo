@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { formatTanggal, formatWaktu } from '@/lib/utils';
 
 type CheckinDetail = {
     idcheckin: string;
@@ -53,7 +54,7 @@ export default function CheckinShow({ checkin }: Props) {
     return (
         <>
             <Head title={`Check-in ${checkin.idcheckin}`} />
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
+            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-6">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
                         <Button variant="outline" size="icon" onClick={() => router.get('/admin/checkin')}>
@@ -76,7 +77,7 @@ export default function CheckinShow({ checkin }: Props) {
                             </div>
                             <div className="text-right text-sm">
                                 <p className="font-mono">{checkin.idcheckin}</p>
-                                <p className="text-muted-foreground">{checkin.created_at}</p>
+                                <p className="text-muted-foreground">{formatWaktu(checkin.created_at)}</p>
                             </div>
                         </div>
                     </CardHeader>
@@ -105,11 +106,11 @@ export default function CheckinShow({ checkin }: Props) {
                         <div className="grid gap-4 md:grid-cols-4 text-sm">
                             <div>
                                 <p className="text-muted-foreground">Check-in</p>
-                                <p className="font-medium">{r?.tglcheckin ?? '-'}</p>
+                                <p className="font-medium">{formatTanggal(r?.tglcheckin)}</p>
                             </div>
                             <div>
                                 <p className="text-muted-foreground">Check-out</p>
-                                <p className="font-medium">{r?.tglcheckout ?? '-'}</p>
+                                <p className="font-medium">{formatTanggal(r?.tglcheckout)}</p>
                             </div>
                             <div>
                                 <p className="text-muted-foreground">Tipe Bayar</p>
@@ -150,7 +151,7 @@ export default function CheckinShow({ checkin }: Props) {
                                         </div>
                                         <div>
                                             <p className="text-muted-foreground">Tanggal</p>
-                                            <p className="font-medium">{checkin.checkout.tglcheckout}</p>
+                                            <p className="font-medium">{formatTanggal(checkin.checkout.tglcheckout)}</p>
                                         </div>
                                         <div>
                                             <p className="text-muted-foreground">Potongan</p>

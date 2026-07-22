@@ -1,11 +1,12 @@
 import { Head, router } from '@inertiajs/react';
-import { TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, Search } from 'lucide-react';
 import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { formatTanggal } from '@/lib/utils';
 
 type ReportType = 'tamu' | 'kamar' | 'reservasi' | 'checkin' | 'checkout' | 'pendapatan' | 'pengeluaran';
 
@@ -89,7 +90,7 @@ return <EmptyRow colSpan={5} />;
                 );
             }
             case 'kamar': {
-                const rows = data as { id_kamar: string; nama: string; harga: number; dp: number; status_kamar: string }[];
+                const rows = data as { id_kamar: string; nama: string; harga: number; fasilitas: string | null; status_kamar: string }[];
 
                 if (!rows.length) {
 return <EmptyRow colSpan={5} />;
@@ -102,7 +103,7 @@ return <EmptyRow colSpan={5} />;
                                 <th className="px-4 py-3 text-left font-medium">ID</th>
                                 <th className="px-4 py-3 text-left font-medium">Nama</th>
                                 <th className="px-4 py-3 text-right font-medium">Harga</th>
-                                <th className="px-4 py-3 text-right font-medium">DP</th>
+                                <th className="px-4 py-3 text-left font-medium">Fasilitas</th>
                                 <th className="px-4 py-3 text-left font-medium">Status</th>
                             </tr>
                         </thead>
@@ -112,7 +113,7 @@ return <EmptyRow colSpan={5} />;
                                     <td className="px-4 py-3 font-mono text-xs">{r.id_kamar}</td>
                                     <td className="px-4 py-3 font-medium">{r.nama}</td>
                                     <td className="px-4 py-3 text-right">{formatRupiah(r.harga)}</td>
-                                    <td className="px-4 py-3 text-right">{formatRupiah(r.dp)}</td>
+                                    <td className="px-4 py-3">{r.fasilitas ?? '-'}</td>
                                     <td className="px-4 py-3">
                                         <Badge variant={r.status_kamar === 'tersedia' ? 'default' : 'destructive'}>
                                             {r.status_kamar}
@@ -158,8 +159,8 @@ return <EmptyRow colSpan={7} />;
                                     <td className="px-4 py-3 font-mono text-xs">{r.idbooking}</td>
                                     <td className="px-4 py-3">{r.tamu?.nama ?? '-'}</td>
                                     <td className="px-4 py-3">{r.kamar?.nama ?? '-'}</td>
-                                    <td className="px-4 py-3">{r.tglcheckin}</td>
-                                    <td className="px-4 py-3">{r.tglcheckout}</td>
+                                    <td className="px-4 py-3">{formatTanggal(r.tglcheckin)}</td>
+                                    <td className="px-4 py-3">{formatTanggal(r.tglcheckout)}</td>
                                     <td className="px-4 py-3 text-right">{formatRupiah(r.totalbayar)}</td>
                                     <td className="px-4 py-3">
                                         <Badge variant="outline">{r.status}</Badge>
@@ -242,7 +243,7 @@ return <EmptyRow colSpan={6} />;
                                     <td className="px-4 py-3 font-mono text-xs">{r.idcheckout}</td>
                                     <td className="px-4 py-3 font-mono text-xs">{r.idcheckin}</td>
                                     <td className="px-4 py-3">{r.checkin?.reservasi?.tamu?.nama ?? '-'}</td>
-                                    <td className="px-4 py-3">{r.tglcheckout}</td>
+                                    <td className="px-4 py-3">{formatTanggal(r.tglcheckout)}</td>
                                     <td className="px-4 py-3 text-right">{formatRupiah(r.potongan)}</td>
                                     <td className="px-4 py-3 text-right font-medium">{formatRupiah(r.grandtotal)}</td>
                                 </tr>
@@ -270,7 +271,7 @@ return <EmptyRow colSpan={3} />;
                         <tbody>
                             {rows.map((r) => (
                                 <tr key={r.id} className="border-b hover:bg-muted/50">
-                                    <td className="px-4 py-3">{r.tgl}</td>
+                                    <td className="px-4 py-3">{formatTanggal(r.tgl)}</td>
                                     <td className="px-4 py-3">{r.keterangan}</td>
                                     <td className="px-4 py-3 text-right font-medium">{formatRupiah(r.total)}</td>
                                 </tr>
@@ -294,7 +295,7 @@ return <EmptyRow colSpan={3} />;
     return (
         <>
             <Head title="Laporan" />
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
+            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-6">
                 <div className="flex flex-wrap gap-2">
                     {reportTabs.map((tab) => (
                         <Button

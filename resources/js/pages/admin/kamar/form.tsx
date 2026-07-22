@@ -10,12 +10,21 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 type KamarData = {
     id_kamar: string;
     nama: string;
+    tipe_kamar: string;
     harga: number;
-    dp: number;
+    fasilitas: string | null;
     deskripsi: string | null;
     cover: string | null;
     status_kamar: string;
 };
+
+const TIPE_KAMAR_OPTIONS = [
+    'Superior Room Balcony',
+    'Deluxe Room Balcony',
+    'Twinbed Room Balcony',
+    'Junior Suite Room Balcony',
+    'Triple Room Balcony',
+];
 
 type Props = {
     kamar?: KamarData;
@@ -28,8 +37,9 @@ export default function KamarForm({ kamar, nextId }: Props) {
 
     const [values, setValues] = useState({
         nama: kamar?.nama ?? '',
+        tipe_kamar: kamar?.tipe_kamar ?? TIPE_KAMAR_OPTIONS[0],
         harga: kamar?.harga?.toString() ?? '',
-        dp: kamar?.dp?.toString() ?? '',
+        fasilitas: kamar?.fasilitas ?? '',
         deskripsi: kamar?.deskripsi ?? '',
         status_kamar: kamar?.status_kamar ?? 'tersedia',
     });
@@ -58,8 +68,9 @@ export default function KamarForm({ kamar, nextId }: Props) {
         e.preventDefault();
         const formData = new FormData();
         formData.append('nama', values.nama);
+        formData.append('tipe_kamar', values.tipe_kamar);
         formData.append('harga', values.harga);
-        formData.append('dp', values.dp);
+        formData.append('fasilitas', values.fasilitas);
         formData.append('deskripsi', values.deskripsi);
         formData.append('status_kamar', values.status_kamar);
 
@@ -78,7 +89,7 @@ export default function KamarForm({ kamar, nextId }: Props) {
     return (
         <>
             <Head title={isEdit ? 'Edit Kamar' : 'Tambah Kamar'} />
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
+            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-6">
                 <Card>
                     <CardHeader>
                         <div className="flex items-center gap-4">
@@ -92,7 +103,7 @@ export default function KamarForm({ kamar, nextId }: Props) {
                         )}
                     </CardHeader>
                     <CardContent>
-                        <form onSubmit={handleSubmit} className="max-w-lg space-y-4">
+                        <form onSubmit={handleSubmit} className="max-w-2xl space-y-4">
                             <div className="space-y-2">
                                 <Label htmlFor="nama">Nama Kamar</Label>
                                 <Input
@@ -105,31 +116,49 @@ export default function KamarForm({ kamar, nextId }: Props) {
                                 {errors.nama && <p className="text-sm text-destructive">{errors.nama}</p>}
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="harga">Harga per Malam</Label>
-                                    <Input
-                                        id="harga"
-                                        name="harga"
-                                        type="number"
-                                        value={values.harga}
-                                        onChange={handleChange}
-                                        placeholder="0"
-                                    />
-                                    {errors.harga && <p className="text-sm text-destructive">{errors.harga}</p>}
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="dp">DP</Label>
-                                    <Input
-                                        id="dp"
-                                        name="dp"
-                                        type="number"
-                                        value={values.dp}
-                                        onChange={handleChange}
-                                        placeholder="0"
-                                    />
-                                    {errors.dp && <p className="text-sm text-destructive">{errors.dp}</p>}
-                                </div>
+                            <div className="space-y-2">
+                                <Label>Tipe Kamar</Label>
+                                <Select
+                                    value={values.tipe_kamar}
+                                    onValueChange={(v) => setValues((p) => ({ ...p, tipe_kamar: v }))}
+                                >
+                                    <SelectTrigger className="w-full">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {TIPE_KAMAR_OPTIONS.map((tipe) => (
+                                            <SelectItem key={tipe} value={tipe}>
+                                                {tipe}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                {errors.tipe_kamar && <p className="text-sm text-destructive">{errors.tipe_kamar}</p>}
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="harga">Harga per Malam</Label>
+                                <Input
+                                    id="harga"
+                                    name="harga"
+                                    type="number"
+                                    value={values.harga}
+                                    onChange={handleChange}
+                                    placeholder="0"
+                                />
+                                {errors.harga && <p className="text-sm text-destructive">{errors.harga}</p>}
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="fasilitas">Fasilitas</Label>
+                                <Input
+                                    id="fasilitas"
+                                    name="fasilitas"
+                                    value={values.fasilitas}
+                                    onChange={handleChange}
+                                    placeholder="AC, TV, WiFi, kamar mandi dalam, dll"
+                                />
+                                {errors.fasilitas && <p className="text-sm text-destructive">{errors.fasilitas}</p>}
                             </div>
 
                             <div className="space-y-2">
@@ -174,7 +203,7 @@ export default function KamarForm({ kamar, nextId }: Props) {
                                     value={values.status_kamar}
                                     onValueChange={(v) => setValues((p) => ({ ...p, status_kamar: v }))}
                                 >
-                                    <SelectTrigger>
+                                    <SelectTrigger className="w-full">
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>

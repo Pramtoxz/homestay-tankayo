@@ -26,11 +26,18 @@ class CheckoutController extends Controller
             });
         }
 
-        $checkout = $query->latest()->paginate($request->get('per_page', 10));
+        $sortBy = $request->get('sort_by', 'created_at');
+        $sortOrder = $request->get('sort_order', 'desc');
+        $allowedSorts = ['idcheckout', 'idcheckin', 'tglcheckout', 'potongan', 'grandtotal', 'created_at'];
+        if (in_array($sortBy, $allowedSorts)) {
+            $query->orderBy($sortBy, $sortOrder);
+        }
+
+        $checkout = $query->paginate($request->get('per_page', 25));
 
         return Inertia::render('admin/checkout/index', [
             'checkout' => $checkout,
-            'filters' => $request->only(['search', 'per_page']),
+            'filters' => $request->only(['search', 'per_page', 'sort_by', 'sort_order']),
         ]);
     }
 
@@ -54,7 +61,7 @@ class CheckoutController extends Controller
             'keterangan' => 'nullable|string',
         ]);
 
-        $checkin = Checkin::with('reservasi')->findOrFail($validated['idcheckin']);
+        $checkin = Checkin::with('reservasi')->findOrFail((string) $validated['idcheckin']);
         $grandtotal = $checkin->reservasi->totalbayar - $validated['potongan'];
 
         $validated['idcheckout'] = IdGenerator::checkout();
@@ -67,7 +74,7 @@ class CheckoutController extends Controller
         Kamar::where('id_kamar', $checkin->reservasi->idkamar)
             ->update(['status_kamar' => 'tersedia']);
 
-        return redirect()->route('checkout.index')
+        return redirect()->route('admin.checkout.index')
             ->with('toast', ['type' => 'success', 'message' => 'Check-out berhasil.']);
     }
 

@@ -19,7 +19,7 @@ class OnlineController extends Controller
     public function dashboard(Request $request): Response
     {
         $user = $request->user();
-        $tamu = Tamu::where('user_id', $user->id)->first();
+        $tamu = $user->currentTamu;
 
         $stats = [
             'total_booking' => 0,
@@ -28,17 +28,15 @@ class OnlineController extends Controller
         ];
         $recentBookings = collect();
 
-        if ($tamu) {
-            $query = Reservasi::where('nik', $tamu->nik);
-            $stats['total_booking'] = (clone $query)->count();
-            $stats['active'] = (clone $query)->whereNotIn('status', ['selesai', 'cancel', 'limit'])->count();
-            $stats['completed'] = (clone $query)->where('status', 'selesai')->count();
-            $recentBookings = Reservasi::where('nik', $tamu->nik)
-                ->with('kamar')
-                ->latest()
-                ->limit(5)
-                ->get();
-        }
+        $query = Reservasi::where('user_id', $user->id);
+        $stats['total_booking'] = (clone $query)->count();
+        $stats['active'] = (clone $query)->whereNotIn('status', ['selesai', 'cancel', 'limit'])->count();
+        $stats['completed'] = (clone $query)->where('status', 'selesai')->count();
+        $recentBookings = Reservasi::where('user_id', $user->id)
+            ->with('kamar')
+            ->latest()
+            ->limit(5)
+            ->get();
 
         $availableRooms = Kamar::where('status_kamar', 'tersedia')
             ->limit(6)
@@ -54,8 +52,7 @@ class OnlineController extends Controller
 
     public function lengkapiData(Request $request): Response
     {
-        $user = $request->user();
-        $tamu = Tamu::where('user_id', $user->id)->first();
+        $tamu = $request->user()->currentTamu;
 
         return Inertia::render('portal/lengkapi-data', [
             'tamu' => $tamu,
@@ -67,16 +64,15 @@ class OnlineController extends Controller
         $user = $request->user();
 
         $validated = $request->validate([
-            'nik' => 'required|string|size:16|unique:tamu,nik',
+            'nik' => 'required|string|size:16',
             'nama' => 'required|string|max:255',
             'alamat' => 'required|string|max:500',
             'nohp' => 'required|string|max:20',
             'jk' => 'required|in:L,P',
         ]);
 
-        $validated['user_id'] = $user->id;
-
-        Tamu::create($validated);
+        Tamu::updateOrCreate(['nik' => $validated['nik']], $validated);
+        $user->update(['current_nik' => $validated['nik']]);
 
         return redirect()->route('portal.dashboard')
             ->with('toast', ['type' => 'success', 'message' => 'Data tamu berhasil disimpan.']);
@@ -84,8 +80,7 @@ class OnlineController extends Controller
 
     public function booking(Request $request): Response
     {
-        $user = $request->user();
-        $tamu = Tamu::where('user_id', $user->id)->first();
+        $tamu = $request->user()->currentTamu;
 
         if (! $tamu) {
             return Inertia::render('portal/lengkapi-data', [
@@ -115,29 +110,37 @@ class OnlineController extends Controller
             $validated['tglcheckout']
         );
 
-        $kamar = Kamar::find($validated['idkamar']);
+        $kamar = Kamar::find((string) $validated['idkamar']);
         $total = 0;
+        $harga = 0;
 
-        if ($available && $kamar) {
-            $total = BookingService::hitungTotal(
-                $kamar->harga,
-                $validated['tglcheckin'],
-                $validated['tglcheckout']
-            );
+        if ($kamar) {
+            $harga = $kamar->harga;
+
+            if ($available) {
+                $total = BookingService::hitungTotal(
+                    $kamar->harga,
+                    $validated['tglcheckin'],
+                    $validated['tglcheckout']
+                );
+            }
         }
 
         return response()->json([
             'available' => $available,
             'total' => $total,
-            'harga' => $kamar?->harga ?? 0,
-            'dp' => $kamar?->dp ?? 0,
+            'harga' => $harga,
         ]);
     }
 
     public function saveBooking(Request $request): RedirectResponse
     {
         $user = $request->user();
-        $tamu = Tamu::where('user_id', $user->id)->firstOrFail();
+        $tamu = $user->currentTamu;
+
+        if (! $tamu) {
+            return redirect()->route('portal.lengkapi-data');
+        }
 
         $validated = $request->validate([
             'idkamar' => 'required|exists:kamar,id_kamar',
@@ -153,6 +156,7 @@ class OnlineController extends Controller
 
         $validated['idbooking'] = IdGenerator::reservasi();
         $validated['nik'] = $tamu->nik;
+        $validated['user_id'] = $user->id;
         $validated['status'] = 'diproses';
         $validated['online'] = true;
         $validated['batas_waktu'] = Carbon::now()->addMinutes(15);
@@ -165,10 +169,7 @@ class OnlineController extends Controller
 
     public function bookingHistory(Request $request): Response
     {
-        $user = $request->user();
-        $tamu = Tamu::where('user_id', $user->id)->firstOrFail();
-
-        $reservasi = Reservasi::where('nik', $tamu->nik)
+        $reservasi = Reservasi::where('user_id', $request->user()->id)
             ->with('kamar')
             ->latest()
             ->paginate(10);
@@ -180,10 +181,7 @@ class OnlineController extends Controller
 
     public function bookingDetail(Request $request, Reservasi $reservasi): Response
     {
-        $user = $request->user();
-        $tamu = Tamu::where('user_id', $user->id)->firstOrFail();
-
-        if ($reservasi->nik !== $tamu->nik) {
+        if ($reservasi->user_id !== $request->user()->id) {
             abort(403);
         }
 
@@ -194,12 +192,9 @@ class OnlineController extends Controller
         ]);
     }
 
-    public function paymentUpload(Request $request, Reservasi $reservasi): Response
+    public function paymentUpload(Request $request, Reservasi $reservasi): Response|RedirectResponse
     {
-        $user = $request->user();
-        $tamu = Tamu::where('user_id', $user->id)->firstOrFail();
-
-        if ($reservasi->nik !== $tamu->nik) {
+        if ($reservasi->user_id !== $request->user()->id) {
             abort(403);
         }
 
@@ -216,10 +211,7 @@ class OnlineController extends Controller
 
     public function savePayment(Request $request, Reservasi $reservasi): RedirectResponse
     {
-        $user = $request->user();
-        $tamu = Tamu::where('user_id', $user->id)->firstOrFail();
-
-        if ($reservasi->nik !== $tamu->nik) {
+        if ($reservasi->user_id !== $request->user()->id) {
             abort(403);
         }
 
@@ -246,10 +238,7 @@ class OnlineController extends Controller
 
     public function cancelBooking(Request $request, Reservasi $reservasi): RedirectResponse
     {
-        $user = $request->user();
-        $tamu = Tamu::where('user_id', $user->id)->firstOrFail();
-
-        if ($reservasi->nik !== $tamu->nik) {
+        if ($reservasi->user_id !== $request->user()->id) {
             abort(403);
         }
 

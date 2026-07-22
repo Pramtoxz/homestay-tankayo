@@ -1,14 +1,22 @@
 import { Head, router, usePage } from '@inertiajs/react';
-import { ArrowLeft, Save, UserPlus, Users } from 'lucide-react';
-import { useState, useMemo } from 'react';
+import { ArrowLeft, Save } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { SearchPickerDialog } from '@/components/search-picker-dialog';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-type TamuOption = { nik: string; nama: string };
-type KamarOption = { id_kamar: string; nama: string; harga: number; dp: number };
+type TamuOption = { nik: string; nama: string; alamat: string; nohp: string };
+type KamarOption = {
+    id_kamar: string;
+    nama: string;
+    tipe_kamar: string;
+    harga: number;
+    fasilitas: string | null;
+    status_kamar: string;
+};
 type ReservasiData = {
     idbooking: string;
     nik: string;
@@ -18,19 +26,28 @@ type ReservasiData = {
     totalbayar: number;
     tipe: string;
     status: string;
+    tamu: { nik: string; nama: string } | null;
+    kamar: { id_kamar: string; nama: string; tipe_kamar: string; harga: number } | null;
 };
 
 type Props = {
     reservasi?: ReservasiData;
-    tamu: TamuOption[];
-    kamar: KamarOption[];
 };
 
-export default function ReservasiForm({ reservasi, tamu, kamar }: Props) {
+const TIPE_KAMAR_OPTIONS = [
+    'Superior Room Balcony',
+    'Deluxe Room Balcony',
+    'Twinbed Room Balcony',
+    'Junior Suite Room Balcony',
+    'Triple Room Balcony',
+];
+
+const formatRupiah = (n: number) =>
+    new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
+
+export default function ReservasiForm({ reservasi }: Props) {
     const isEdit = !!reservasi;
     const { errors } = usePage().props as { errors: Record<string, string> };
-
-    const [mode, setMode] = useState<'existing' | 'walkin'>(isEdit ? 'existing' : 'existing');
 
     const [values, setValues] = useState({
         nik: reservasi?.nik ?? '',
@@ -42,15 +59,40 @@ export default function ReservasiForm({ reservasi, tamu, kamar }: Props) {
         status: reservasi?.status ?? '',
     });
 
-    const [tamuBaru, setTamuBaru] = useState({
-        nik: '',
-        nama: '',
-        alamat: '',
-        nohp: '',
-        jk: 'L',
-    });
+    const [selectedTamu, setSelectedTamu] = useState<TamuOption | null>(
+        reservasi?.tamu ? { nik: reservasi.tamu.nik, nama: reservasi.tamu.nama, alamat: '', nohp: '' } : null,
+    );
+    const [selectedKamar, setSelectedKamar] = useState<KamarOption | null>(
+        reservasi?.kamar
+            ? {
+                  id_kamar: reservasi.kamar.id_kamar,
+                  nama: reservasi.kamar.nama,
+                  tipe_kamar: reservasi.kamar.tipe_kamar,
+                  harga: reservasi.kamar.harga,
+                  fasilitas: null,
+                  status_kamar: '',
+              }
+            : null,
+    );
+    const [tamuDialogOpen, setTamuDialogOpen] = useState(false);
+    const [kamarDialogOpen, setKamarDialogOpen] = useState(false);
 
-    const selectedKamar = kamar.find((k) => k.id_kamar === values.idkamar);
+    const todayStr = useMemo(() => {
+        const d = new Date();
+
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }, []);
+
+    const minCheckout = useMemo(() => {
+        if (!values.tglcheckin) {
+            return todayStr;
+        }
+
+        const [y, m, d] = values.tglcheckin.split('-').map(Number);
+        const next = new Date(y, m - 1, d + 1);
+
+        return `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}-${String(next.getDate()).padStart(2, '0')}`;
+    }, [values.tglcheckin, todayStr]);
 
     const calculatedDays = useMemo(() => {
         if (!values.tglcheckin || !values.tglcheckout) {
@@ -70,12 +112,26 @@ export default function ReservasiForm({ reservasi, tamu, kamar }: Props) {
         return null;
     }, [selectedKamar, calculatedDays, isEdit]);
 
+    const tanggalBelumDipilih = !values.tglcheckin || !values.tglcheckout;
+
+    const kamarSearchParams = useMemo(
+        () => ({ tglcheckin: values.tglcheckin, tglcheckout: values.tglcheckout }),
+        [values.tglcheckin, values.tglcheckout],
+    );
+
+    const kamarFilters = useMemo(
+        () => [
+            {
+                key: 'tipe_kamar',
+                label: 'Tipe Kamar',
+                options: TIPE_KAMAR_OPTIONS.map((tipe) => ({ value: tipe, label: tipe })),
+            },
+        ],
+        [],
+    );
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setValues((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-    };
-
-    const handleTamuChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setTamuBaru((prev) => ({ ...prev, [e.target.name]: e.target.value }));
     };
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -89,162 +145,59 @@ export default function ReservasiForm({ reservasi, tamu, kamar }: Props) {
                 tipe: values.tipe,
                 status: values.status,
             });
-        } else if (mode === 'walkin') {
+        } else {
             router.post('/admin/reservasi', {
                 ...values,
-                mode: 'walkin',
-                tamu: tamuBaru,
+                totalbayar: autoTotal !== null ? autoTotal.toString() : values.totalbayar,
+                nik: selectedTamu?.nik ?? '',
+                idkamar: selectedKamar?.id_kamar ?? '',
             });
-        } else {
-            router.post('/admin/reservasi', values);
         }
     };
-
-    const formatRupiah = (n: number) =>
-        new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
 
     return (
         <>
             <Head title={isEdit ? 'Edit Reservasi' : 'Buat Reservasi'} />
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
+            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-6">
                 <Card>
                     <CardHeader>
                         <div className="flex items-center gap-4">
                             <Button variant="outline" size="icon" onClick={() => router.get('/admin/reservasi')}>
                                 <ArrowLeft className="h-4 w-4" />
                             </Button>
-                            <CardTitle>{isEdit ? 'Edit Reservasi' : 'Buat Reservasi'}</CardTitle>
+                            <div>
+                                <CardTitle>{isEdit ? 'Edit Reservasi' : 'Buat Reservasi'}</CardTitle>
+                                {isEdit && <CardDescription className="font-mono">{reservasi.idbooking}</CardDescription>}
+                            </div>
                         </div>
                     </CardHeader>
                     <CardContent>
-                        <form onSubmit={handleSubmit} className="max-w-lg space-y-4">
+                        <form onSubmit={handleSubmit} className="mx-auto max-w-2xl space-y-4">
                             {!isEdit && (
-                                <div className="flex gap-2">
-                                    <Button
-                                        type="button"
-                                        variant={mode === 'existing' ? 'default' : 'outline'}
-                                        onClick={() => setMode('existing')}
-                                        className="flex-1"
-                                    >
-                                        <Users className="mr-2 h-4 w-4" />
-                                        Pilih Tamu
-                                    </Button>
-                                    <Button
-                                        type="button"
-                                        variant={mode === 'walkin' ? 'default' : 'outline'}
-                                        onClick={() => setMode('walkin')}
-                                        className="flex-1"
-                                    >
-                                        <UserPlus className="mr-2 h-4 w-4" />
-                                        Walk-in (Tamu Baru)
-                                    </Button>
-                                </div>
-                            )}
-
-                            {!isEdit && mode === 'existing' && (
                                 <div className="space-y-2">
                                     <Label>Tamu</Label>
-                                    <Select value={values.nik} onValueChange={(v) => setValues((p) => ({ ...p, nik: v }))}>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Pilih tamu..." />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {tamu.map((t) => (
-                                                <SelectItem key={t.nik} value={t.nik}>
-                                                    {t.nama} ({t.nik})
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    {errors.nik && <p className="text-sm text-destructive">{errors.nik}</p>}
-                                </div>
-                            )}
-
-                            {!isEdit && mode === 'walkin' && (
-                                <Card className="border-dashed">
-                                    <CardHeader>
-                                        <CardTitle className="text-sm">Data Tamu Baru</CardTitle>
-                                    </CardHeader>
-                                    <CardContent className="space-y-3">
+                                    <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-2">
                                             <Label htmlFor="tamu_nik">NIK</Label>
-                                            <Input
-                                                id="tamu_nik"
-                                                name="nik"
-                                                value={tamuBaru.nik}
-                                                onChange={handleTamuChange}
-                                                placeholder="Nomor Induk Kependudukan"
-                                                maxLength={30}
-                                            />
-                                            {errors['tamu.nik'] && <p className="text-sm text-destructive">{errors['tamu.nik']}</p>}
+                                            <Input id="tamu_nik" readOnly placeholder="Belum dipilih" value={selectedTamu?.nik ?? ''} />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="tamu_nama">Nama Lengkap</Label>
-                                            <Input
-                                                id="tamu_nama"
-                                                name="nama"
-                                                value={tamuBaru.nama}
-                                                onChange={handleTamuChange}
-                                                placeholder="Nama sesuai KTP"
-                                            />
-                                            {errors['tamu.nama'] && <p className="text-sm text-destructive">{errors['tamu.nama']}</p>}
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="tamu_alamat">Alamat</Label>
-                                            <Input
-                                                id="tamu_alamat"
-                                                name="alamat"
-                                                value={tamuBaru.alamat}
-                                                onChange={handleTamuChange}
-                                                placeholder="Alamat lengkap"
-                                            />
-                                            {errors['tamu.alamat'] && <p className="text-sm text-destructive">{errors['tamu.alamat']}</p>}
-                                        </div>
-                                        <div className="grid grid-cols-2 gap-3">
-                                            <div className="space-y-2">
-                                                <Label htmlFor="tamu_nohp">No. HP</Label>
+                                            <Label htmlFor="tamu_nama">Nama Tamu</Label>
+                                            <div className="flex items-center gap-2">
                                                 <Input
-                                                    id="tamu_nohp"
-                                                    name="nohp"
-                                                    value={tamuBaru.nohp}
-                                                    onChange={handleTamuChange}
-                                                    placeholder="08xxx"
+                                                    id="tamu_nama"
+                                                    readOnly
+                                                    placeholder="Belum dipilih"
+                                                    value={selectedTamu?.nama ?? ''}
+                                                    className="flex-1"
                                                 />
-                                                {errors['tamu.nohp'] && <p className="text-sm text-destructive">{errors['tamu.nohp']}</p>}
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label>Jenis Kelamin</Label>
-                                                <Select value={tamuBaru.jk} onValueChange={(v) => setTamuBaru((p) => ({ ...p, jk: v }))}>
-                                                    <SelectTrigger>
-                                                        <SelectValue />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="L">Laki-laki</SelectItem>
-                                                        <SelectItem value="P">Perempuan</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
+                                                <Button type="button" variant="outline" size="sm" onClick={() => setTamuDialogOpen(true)}>
+                                                    Pilih Tamu
+                                                </Button>
                                             </div>
                                         </div>
-                                    </CardContent>
-                                </Card>
-                            )}
-
-                            {!isEdit && (
-                                <div className="space-y-2">
-                                    <Label>Kamar</Label>
-                                    <Select value={values.idkamar} onValueChange={(v) => setValues((p) => ({ ...p, idkamar: v }))}>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Pilih kamar..." />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {kamar.map((k) => (
-                                                <SelectItem key={k.id_kamar} value={k.id_kamar}>
-                                                    {k.nama} - {formatRupiah(k.harga)}/malam
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    {errors.idkamar && <p className="text-sm text-destructive">{errors.idkamar}</p>}
+                                    </div>
+                                    {errors.nik && <p className="text-sm text-destructive">{errors.nik}</p>}
                                 </div>
                             )}
 
@@ -255,6 +208,7 @@ export default function ReservasiForm({ reservasi, tamu, kamar }: Props) {
                                         id="tglcheckin"
                                         name="tglcheckin"
                                         type="date"
+                                        min={isEdit ? undefined : todayStr}
                                         value={values.tglcheckin}
                                         onChange={handleChange}
                                     />
@@ -266,12 +220,74 @@ export default function ReservasiForm({ reservasi, tamu, kamar }: Props) {
                                         id="tglcheckout"
                                         name="tglcheckout"
                                         type="date"
+                                        min={minCheckout}
                                         value={values.tglcheckout}
                                         onChange={handleChange}
                                     />
                                     {errors.tglcheckout && <p className="text-sm text-destructive">{errors.tglcheckout}</p>}
                                 </div>
                             </div>
+
+                            {!isEdit && (
+                                <div className="space-y-2">
+                                    <Label>Kamar</Label>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="kamar_id">ID Kamar</Label>
+                                            <Input id="kamar_id" readOnly placeholder="Belum dipilih" value={selectedKamar?.id_kamar ?? ''} />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="kamar_nama">Nama Kamar</Label>
+                                            <div className="flex items-center gap-2">
+                                                <Input
+                                                    id="kamar_nama"
+                                                    readOnly
+                                                    placeholder="Belum dipilih"
+                                                    value={selectedKamar?.nama ?? ''}
+                                                    className="flex-1"
+                                                />
+                                                <Button
+                                                    type="button"
+                                                    variant="outline"
+                                                    size="sm"
+                                                    disabled={tanggalBelumDipilih}
+                                                    onClick={() => setKamarDialogOpen(true)}
+                                                >
+                                                    Pilih Kamar
+                                                </Button>
+                                            </div>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="kamar_tipe">Tipe Kamar</Label>
+                                            <Input id="kamar_tipe" readOnly placeholder="Belum dipilih" value={selectedKamar?.tipe_kamar ?? ''} />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="kamar_fasilitas">Fasilitas</Label>
+                                            <Input
+                                                id="kamar_fasilitas"
+                                                readOnly
+                                                placeholder="Belum dipilih"
+                                                value={selectedKamar?.fasilitas ?? ''}
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="kamar_harga">Harga Kamar</Label>
+                                            <Input
+                                                id="kamar_harga"
+                                                readOnly
+                                                placeholder="Belum dipilih"
+                                                value={selectedKamar ? `${formatRupiah(selectedKamar.harga)}/malam` : ''}
+                                            />
+                                        </div>
+                                    </div>
+                                    {tanggalBelumDipilih && (
+                                        <p className="text-sm text-muted-foreground">
+                                            Pilih tanggal check-in &amp; check-out terlebih dahulu sebelum memilih kamar.
+                                        </p>
+                                    )}
+                                    {errors.idkamar && <p className="text-sm text-destructive">{errors.idkamar}</p>}
+                                </div>
+                            )}
 
                             {selectedKamar && values.tglcheckin && values.tglcheckout && (
                                 <div className="rounded-md bg-muted p-3 text-sm">
@@ -286,8 +302,8 @@ export default function ReservasiForm({ reservasi, tamu, kamar }: Props) {
                                     id="totalbayar"
                                     name="totalbayar"
                                     type="number"
+                                    readOnly
                                     value={autoTotal !== null ? autoTotal.toString() : values.totalbayar}
-                                    onChange={handleChange}
                                     placeholder="0"
                                 />
                                 {errors.totalbayar && <p className="text-sm text-destructive">{errors.totalbayar}</p>}
@@ -296,13 +312,12 @@ export default function ReservasiForm({ reservasi, tamu, kamar }: Props) {
                             <div className="space-y-2">
                                 <Label>Tipe Pembayaran</Label>
                                 <Select value={values.tipe} onValueChange={(v) => setValues((p) => ({ ...p, tipe: v }))}>
-                                    <SelectTrigger>
+                                    <SelectTrigger className="w-full">
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="cash">Cash</SelectItem>
                                         <SelectItem value="transfer">Transfer</SelectItem>
-                                        <SelectItem value="dp">DP</SelectItem>
                                     </SelectContent>
                                 </Select>
                                 {errors.tipe && <p className="text-sm text-destructive">{errors.tipe}</p>}
@@ -312,7 +327,7 @@ export default function ReservasiForm({ reservasi, tamu, kamar }: Props) {
                                 <div className="space-y-2">
                                     <Label>Status</Label>
                                     <Select value={values.status} onValueChange={(v) => setValues((p) => ({ ...p, status: v }))}>
-                                        <SelectTrigger>
+                                        <SelectTrigger className="w-full">
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -339,6 +354,34 @@ export default function ReservasiForm({ reservasi, tamu, kamar }: Props) {
                     </CardContent>
                 </Card>
             </div>
+
+            <SearchPickerDialog<TamuOption>
+                open={tamuDialogOpen}
+                onOpenChange={setTamuDialogOpen}
+                title="Pilih Tamu"
+                searchPlaceholder="Cari NIK, nama, atau no HP..."
+                fetchUrl="/admin/reservasi-search/tamu"
+                columns={['NIK', 'Nama', 'No HP']}
+                getRowKey={(t) => t.nik}
+                renderRow={(t) => [t.nik, t.nama, t.nohp]}
+                onSelect={setSelectedTamu}
+                emptyMessage="Tidak ada data tamu."
+            />
+
+            <SearchPickerDialog<KamarOption>
+                open={kamarDialogOpen}
+                onOpenChange={setKamarDialogOpen}
+                title="Pilih Kamar"
+                searchPlaceholder="Cari ID atau nama kamar..."
+                fetchUrl="/admin/reservasi-search/kamar"
+                extraParams={kamarSearchParams}
+                filters={kamarFilters}
+                columns={['ID', 'Nama', 'Tipe Kamar', 'Harga/Malam']}
+                getRowKey={(k) => k.id_kamar}
+                renderRow={(k) => [k.id_kamar, k.nama, k.tipe_kamar, formatRupiah(k.harga)]}
+                onSelect={setSelectedKamar}
+                emptyMessage="Tidak ada kamar tersedia."
+            />
         </>
     );
 }

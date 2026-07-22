@@ -1,11 +1,15 @@
 import { Head, router } from '@inertiajs/react';
-import { Plus, Eye, Pencil, Trash2, Search } from 'lucide-react';
-import { useState, useCallback } from 'react';
+import type {ColumnDef} from '@tanstack/react-table';
+import { Plus, Eye, Pencil, Printer, Trash2 } from 'lucide-react';
+import { useCallback, useEffect, useMemo } from 'react';
+import { DataTable, SortableHeader  } from '@/components/data-table';
+import type {PaginationMeta} from '@/components/data-table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { formatTanggal } from '@/lib/utils';
 
 type ReservasiItem = {
     idbooking: string;
@@ -17,22 +21,20 @@ type ReservasiItem = {
     status: string;
 };
 
-type PaginationLink = {
-    url: string | null;
-    label: string;
-    active: boolean;
-};
-
 type Props = {
     reservasi: {
         data: ReservasiItem[];
-        links: PaginationLink[];
         current_page: number;
         last_page: number;
+        per_page: number;
+        total: number;
     };
     filters: {
         search?: string;
         status?: string;
+        per_page?: string;
+        sort_by?: string;
+        sort_order?: string;
     };
 };
 
@@ -49,21 +51,15 @@ const statusColor: Record<string, string> = {
 };
 
 export default function ReservasiIndex({ reservasi, filters }: Props) {
-    const [search, setSearch] = useState(filters.search ?? '');
-    const [status, setStatus] = useState(filters.status ?? '');
+    const search = filters.search ?? '';
 
-    const handleSearch = useCallback(() => {
-        router.get('/admin/reservasi', { search, status }, { preserveState: true });
-    }, [search, status]);
+    const handleSearch = useCallback((value: string) => {
+        router.get('/admin/reservasi', { ...filters, search: value, page: 1 }, { preserveState: true });
+    }, [filters]);
 
-    const handleStatusFilter = useCallback(
-        (val: string) => {
-            const s = val === 'all' ? '' : val;
-            setStatus(s);
-            router.get('/admin/reservasi', { search, status: s }, { preserveState: true });
-        },
-        [search],
-    );
+    const handleFilter = useCallback((key: string, value: string) => {
+        router.get('/admin/reservasi', { ...filters, [key]: value, page: 1 }, { preserveState: true });
+    }, [filters]);
 
     const handleDelete = useCallback((id: string) => {
         if (confirm('Yakin ingin menghapus reservasi ini?')) {
@@ -71,10 +67,110 @@ export default function ReservasiIndex({ reservasi, filters }: Props) {
         }
     }, []);
 
+    const handleCetakFaktur = useCallback((id: string) => {
+        window.open(`/admin/reservasi/${id}/faktur`, '_blank');
+    }, []);
+
+    useEffect(() => {
+        return router.on('flash', (event) => {
+            const fakturUrl = (event as CustomEvent).detail?.flash?.faktur_url as string | undefined;
+
+            if (fakturUrl) {
+                window.open(fakturUrl, '_blank');
+            }
+        });
+    }, []);
+
+    const handlePageChange = useCallback((page: number) => {
+        router.get('/admin/reservasi', { ...filters, page }, { preserveState: true });
+    }, [filters]);
+
+    const handlePageSizeChange = useCallback((perPage: number) => {
+        router.get('/admin/reservasi', { ...filters, per_page: perPage, page: 1 }, { preserveState: true });
+    }, [filters]);
+
+    const handleSortChange = useCallback((sortBy: string, sortOrder: 'asc' | 'desc') => {
+        router.get('/admin/reservasi', { ...filters, sort_by: sortBy, sort_order: sortOrder, page: 1 }, { preserveState: true });
+    }, [filters]);
+
+    const columns: ColumnDef<ReservasiItem>[] = useMemo(() => [
+        {
+            accessorKey: 'idbooking',
+            header: ({ column }) => <SortableHeader title="ID Booking" column={column} />,
+            cell: ({ row }) => <span className="font-mono text-xs">{row.original.idbooking}</span>,
+        },
+        {
+            id: 'tamu',
+            header: () => <span>Tamu</span>,
+            cell: ({ row }) => row.original.tamu?.nama ?? '-',
+        },
+        {
+            id: 'kamar',
+            header: () => <span>Kamar</span>,
+            cell: ({ row }) => row.original.kamar?.nama ?? '-',
+        },
+        {
+            accessorKey: 'tglcheckin',
+            header: ({ column }) => <SortableHeader title="Check-in" column={column} />,
+            cell: ({ row }) => formatTanggal(row.original.tglcheckin),
+        },
+        {
+            accessorKey: 'tglcheckout',
+            header: ({ column }) => <SortableHeader title="Check-out" column={column} />,
+            cell: ({ row }) => formatTanggal(row.original.tglcheckout),
+        },
+        {
+            accessorKey: 'totalbayar',
+            header: ({ column }) => <SortableHeader title="Total" column={column} className="justify-end" />,
+            cell: ({ row }) => <div className="text-right font-medium">{formatRupiah(row.original.totalbayar)}</div>,
+        },
+        {
+            accessorKey: 'status',
+            header: ({ column }) => <SortableHeader title="Status" column={column} />,
+            cell: ({ row }) => (
+                <Badge className={statusColor[row.original.status] ?? ''}>{row.original.status}</Badge>
+            ),
+        },
+        {
+            id: 'aksi',
+            header: () => <div className="text-right">Aksi</div>,
+            cell: ({ row }) => (
+                <div className="flex justify-end gap-2">
+                    <Button variant="outline" size="sm" onClick={() => router.get(`/admin/reservasi/${row.original.idbooking}`)}>
+                        <Eye className="h-3 w-3" />
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => router.get(`/admin/reservasi/${row.original.idbooking}/edit`)}>
+                        <Pencil className="h-3 w-3" />
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => handleCetakFaktur(row.original.idbooking)}>
+                        <Printer className="h-3 w-3" />
+                    </Button>
+                    <Button variant="destructive" size="sm" onClick={() => handleDelete(row.original.idbooking)}>
+                        <Trash2 className="h-3 w-3" />
+                    </Button>
+                </div>
+            ),
+        },
+    ], [handleDelete, handleCetakFaktur]);
+
+    const sorting = useMemo(() => {
+        const sortBy = filters.sort_by ?? 'created_at';
+        const sortOrder = filters.sort_order ?? 'desc';
+
+        return [{ id: sortBy, desc: sortOrder === 'desc' }];
+    }, [filters.sort_by, filters.sort_order]);
+
+    const pagination: PaginationMeta = {
+        current_page: reservasi.current_page,
+        last_page: reservasi.last_page,
+        per_page: reservasi.per_page,
+        total: reservasi.total,
+    };
+
     return (
         <>
             <Head title="Data Reservasi" />
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
+            <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-6">
                 <Card>
                     <CardHeader>
                         <div className="flex items-center justify-between">
@@ -86,16 +182,15 @@ export default function ReservasiIndex({ reservasi, filters }: Props) {
                         </div>
                     </CardHeader>
                     <CardContent>
-                        <div className="mb-4 flex gap-2">
+                        <div className="mb-4 flex flex-wrap items-center gap-3">
                             <Input
                                 placeholder="Cari booking, tamu, atau kamar..."
                                 value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                                className="max-w-sm"
+                                onChange={(e) => handleSearch(e.target.value)}
+                                className="w-72"
                             />
-                            <Select value={status || 'all'} onValueChange={handleStatusFilter}>
-                                <SelectTrigger className="w-[180px]">
+                            <Select value={filters.status || 'all'} onValueChange={(v) => handleFilter('status', v === 'all' ? '' : v)}>
+                                <SelectTrigger className="w-48">
                                     <SelectValue placeholder="Semua Status" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -108,103 +203,24 @@ export default function ReservasiIndex({ reservasi, filters }: Props) {
                                     <SelectItem value="cancel">Cancel</SelectItem>
                                 </SelectContent>
                             </Select>
-                            <Button variant="outline" onClick={handleSearch}>
-                                <Search className="h-4 w-4" />
-                            </Button>
                         </div>
 
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-sm">
-                                <thead>
-                                    <tr className="border-b">
-                                        <th className="px-4 py-3 text-left font-medium">ID Booking</th>
-                                        <th className="px-4 py-3 text-left font-medium">Tamu</th>
-                                        <th className="px-4 py-3 text-left font-medium">Kamar</th>
-                                        <th className="px-4 py-3 text-left font-medium">Check-in</th>
-                                        <th className="px-4 py-3 text-left font-medium">Check-out</th>
-                                        <th className="px-4 py-3 text-right font-medium">Total</th>
-                                        <th className="px-4 py-3 text-left font-medium">Status</th>
-                                        <th className="px-4 py-3 text-right font-medium">Aksi</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {reservasi.data.length === 0 ? (
-                                        <tr>
-                                            <td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">
-                                                Tidak ada data reservasi.
-                                            </td>
-                                        </tr>
-                                    ) : (
-                                        reservasi.data.map((item) => (
-                                            <tr key={item.idbooking} className="border-b hover:bg-muted/50">
-                                                <td className="px-4 py-3 font-mono text-xs">{item.idbooking}</td>
-                                                <td className="px-4 py-3">{item.tamu?.nama ?? '-'}</td>
-                                                <td className="px-4 py-3">{item.kamar?.nama ?? '-'}</td>
-                                                <td className="px-4 py-3">{item.tglcheckin}</td>
-                                                <td className="px-4 py-3">{item.tglcheckout}</td>
-                                                <td className="px-4 py-3 text-right">{formatRupiah(item.totalbayar)}</td>
-                                                <td className="px-4 py-3">
-                                                    <Badge className={statusColor[item.status] ?? ''}>
-                                                        {item.status}
-                                                    </Badge>
-                                                </td>
-                                                <td className="px-4 py-3 text-right">
-                                                    <div className="flex justify-end gap-2">
-                                                        <Button
-                                                            variant="outline"
-                                                            size="sm"
-                                                            onClick={() =>
-                                                                router.get(`/admin/reservasi/${item.idbooking}`)
-                                                            }
-                                                        >
-                                                            <Eye className="h-3 w-3" />
-                                                        </Button>
-                                                        <Button
-                                                            variant="outline"
-                                                            size="sm"
-                                                            onClick={() =>
-                                                                router.get(
-                                                                    `/admin/reservasi/${item.idbooking}/edit`,
-                                                                )
-                                                            }
-                                                        >
-                                                            <Pencil className="h-3 w-3" />
-                                                        </Button>
-                                                        <Button
-                                                            variant="destructive"
-                                                            size="sm"
-                                                            onClick={() => handleDelete(item.idbooking)}
-                                                        >
-                                                            <Trash2 className="h-3 w-3" />
-                                                        </Button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
+                        <DataTable
+                            columns={columns}
+                            data={reservasi.data}
+                            pagination={pagination}
+                            sorting={sorting}
+                            onSortingChange={(updater) => {
+                                const newSorting = typeof updater === 'function' ? updater(sorting) : updater;
 
-                        {reservasi.last_page > 1 && (
-                            <div className="mt-4 flex items-center justify-between">
-                                <p className="text-sm text-muted-foreground">
-                                    Halaman {reservasi.current_page} dari {reservasi.last_page}
-                                </p>
-                                <div className="flex gap-1">
-                                    {reservasi.links.map((link, i) => (
-                                        <Button
-                                            key={i}
-                                            variant={link.active ? 'default' : 'outline'}
-                                            size="sm"
-                                            disabled={!link.url}
-                                            onClick={() => link.url && router.get(link.url)}
-                                            dangerouslySetInnerHTML={{ __html: link.label }}
-                                        />
-                                    ))}
-                                </div>
-                            </div>
-                        )}
+                                if (newSorting.length > 0) {
+                                    handleSortChange(newSorting[0].id, newSorting[0].desc ? 'desc' : 'asc');
+                                }
+                            }}
+                            onPageChange={handlePageChange}
+                            onPageSizeChange={handlePageSizeChange}
+                            emptyMessage="Tidak ada data reservasi."
+                        />
                     </CardContent>
                 </Card>
             </div>

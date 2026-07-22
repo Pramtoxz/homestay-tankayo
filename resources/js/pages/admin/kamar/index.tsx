@@ -1,6 +1,9 @@
 import { Head, router } from '@inertiajs/react';
-import { Plus, Pencil, Trash2, Search } from 'lucide-react';
-import { useState, useCallback } from 'react';
+import type {ColumnDef} from '@tanstack/react-table';
+import { Plus, Pencil, Trash2 } from 'lucide-react';
+import { useCallback, useMemo } from 'react';
+import { DataTable, SortableHeader  } from '@/components/data-table';
+import type {PaginationMeta} from '@/components/data-table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,28 +13,27 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 type KamarItem = {
     id_kamar: string;
     nama: string;
+    tipe_kamar: string;
     harga: number;
-    dp: number;
+    fasilitas: string | null;
     status_kamar: string;
     cover: string | null;
-};
-
-type PaginationLink = {
-    url: string | null;
-    label: string;
-    active: boolean;
 };
 
 type Props = {
     kamar: {
         data: KamarItem[];
-        links: PaginationLink[];
         current_page: number;
         last_page: number;
+        per_page: number;
+        total: number;
     };
     filters: {
         search?: string;
         status?: string;
+        per_page?: string;
+        sort_by?: string;
+        sort_order?: string;
     };
 };
 
@@ -39,18 +41,15 @@ const formatRupiah = (n: number) =>
     new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
 
 export default function KamarIndex({ kamar, filters }: Props) {
-    const [search, setSearch] = useState(filters.search ?? '');
-    const [status, setStatus] = useState(filters.status ?? '');
+    const search = filters.search ?? '';
 
-    const handleSearch = useCallback(() => {
-        router.get('/admin/kamar', { search, status }, { preserveState: true });
-    }, [search, status]);
+    const handleSearch = useCallback((value: string) => {
+        router.get('/admin/kamar', { ...filters, search: value, page: 1 }, { preserveState: true });
+    }, [filters]);
 
-    const handleStatusFilter = useCallback((val: string) => {
-        const s = val === 'all' ? '' : val;
-        setStatus(s);
-        router.get('/admin/kamar', { search, status: s }, { preserveState: true });
-    }, [search]);
+    const handleFilter = useCallback((key: string, value: string) => {
+        router.get('/admin/kamar', { ...filters, [key]: value, page: 1 }, { preserveState: true });
+    }, [filters]);
 
     const handleDelete = useCallback((id: string) => {
         if (confirm('Yakin ingin menghapus kamar ini?')) {
@@ -58,10 +57,89 @@ export default function KamarIndex({ kamar, filters }: Props) {
         }
     }, []);
 
+    const handlePageChange = useCallback((page: number) => {
+        router.get('/admin/kamar', { ...filters, page }, { preserveState: true });
+    }, [filters]);
+
+    const handlePageSizeChange = useCallback((perPage: number) => {
+        router.get('/admin/kamar', { ...filters, per_page: perPage, page: 1 }, { preserveState: true });
+    }, [filters]);
+
+    const handleSortChange = useCallback((sortBy: string, sortOrder: 'asc' | 'desc') => {
+        router.get('/admin/kamar', { ...filters, sort_by: sortBy, sort_order: sortOrder, page: 1 }, { preserveState: true });
+    }, [filters]);
+
+    const columns: ColumnDef<KamarItem>[] = useMemo(() => [
+        {
+            accessorKey: 'id_kamar',
+            header: ({ column }) => <SortableHeader title="ID" column={column} />,
+            cell: ({ row }) => <span className="font-mono text-xs">{row.original.id_kamar}</span>,
+        },
+        {
+            accessorKey: 'nama',
+            header: ({ column }) => <SortableHeader title="Nama" column={column} />,
+            cell: ({ row }) => <span className="font-medium">{row.original.nama}</span>,
+        },
+        {
+            accessorKey: 'tipe_kamar',
+            header: ({ column }) => <SortableHeader title="Tipe Kamar" column={column} />,
+            cell: ({ row }) => <span className="text-muted-foreground">{row.original.tipe_kamar}</span>,
+        },
+        {
+            accessorKey: 'harga',
+            header: ({ column }) => <SortableHeader title="Harga" column={column} className="justify-end" />,
+            cell: ({ row }) => <div className="text-right">{formatRupiah(row.original.harga)}</div>,
+        },
+        {
+            accessorKey: 'fasilitas',
+            header: () => 'Fasilitas',
+            cell: ({ row }) => (
+                <span className="line-clamp-1 text-muted-foreground">{row.original.fasilitas ?? '-'}</span>
+            ),
+        },
+        {
+            accessorKey: 'status_kamar',
+            header: ({ column }) => <SortableHeader title="Status" column={column} />,
+            cell: ({ row }) => (
+                <Badge variant={row.original.status_kamar === 'tersedia' ? 'default' : 'destructive'}>
+                    {row.original.status_kamar}
+                </Badge>
+            ),
+        },
+        {
+            id: 'aksi',
+            header: () => <div className="text-right">Aksi</div>,
+            cell: ({ row }) => (
+                <div className="flex justify-end gap-2">
+                    <Button variant="outline" size="sm" onClick={() => router.get(`/admin/kamar/${row.original.id_kamar}/edit`)}>
+                        <Pencil className="h-3 w-3" />
+                    </Button>
+                    <Button variant="destructive" size="sm" onClick={() => handleDelete(row.original.id_kamar)}>
+                        <Trash2 className="h-3 w-3" />
+                    </Button>
+                </div>
+            ),
+        },
+    ], [handleDelete]);
+
+    const sorting = useMemo(() => {
+        const sortBy = filters.sort_by ?? 'created_at';
+        const sortOrder = filters.sort_order ?? 'desc';
+
+        return [{ id: sortBy, desc: sortOrder === 'desc' }];
+    }, [filters.sort_by, filters.sort_order]);
+
+    const pagination: PaginationMeta = {
+        current_page: kamar.current_page,
+        last_page: kamar.last_page,
+        per_page: kamar.per_page,
+        total: kamar.total,
+    };
+
     return (
         <>
             <Head title="Data Kamar" />
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
+            <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-6">
                 <Card>
                     <CardHeader>
                         <div className="flex items-center justify-between">
@@ -73,16 +151,15 @@ export default function KamarIndex({ kamar, filters }: Props) {
                         </div>
                     </CardHeader>
                     <CardContent>
-                        <div className="mb-4 flex gap-2">
+                        <div className="mb-4 flex flex-wrap items-center gap-3">
                             <Input
                                 placeholder="Cari ID atau nama kamar..."
                                 value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                                className="max-w-sm"
+                                onChange={(e) => handleSearch(e.target.value)}
+                                className="w-72"
                             />
-                            <Select value={status || 'all'} onValueChange={handleStatusFilter}>
-                                <SelectTrigger className="w-[180px]">
+                            <Select value={filters.status || 'all'} onValueChange={(v) => handleFilter('status', v === 'all' ? '' : v)}>
+                                <SelectTrigger className="w-48">
                                     <SelectValue placeholder="Semua Status" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -91,92 +168,24 @@ export default function KamarIndex({ kamar, filters }: Props) {
                                     <SelectItem value="tidak tersedia">Tidak Tersedia</SelectItem>
                                 </SelectContent>
                             </Select>
-                            <Button variant="outline" onClick={handleSearch}>
-                                <Search className="h-4 w-4" />
-                            </Button>
                         </div>
 
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-sm">
-                                <thead>
-                                    <tr className="border-b">
-                                        <th className="px-4 py-3 text-left font-medium">ID</th>
-                                        <th className="px-4 py-3 text-left font-medium">Nama</th>
-                                        <th className="px-4 py-3 text-right font-medium">Harga</th>
-                                        <th className="px-4 py-3 text-right font-medium">DP</th>
-                                        <th className="px-4 py-3 text-left font-medium">Status</th>
-                                        <th className="px-4 py-3 text-right font-medium">Aksi</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {kamar.data.length === 0 ? (
-                                        <tr>
-                                            <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
-                                                Tidak ada data kamar.
-                                            </td>
-                                        </tr>
-                                    ) : (
-                                        kamar.data.map((item) => (
-                                            <tr key={item.id_kamar} className="border-b hover:bg-muted/50">
-                                                <td className="px-4 py-3 font-mono text-xs">{item.id_kamar}</td>
-                                                <td className="px-4 py-3 font-medium">{item.nama}</td>
-                                                <td className="px-4 py-3 text-right">{formatRupiah(item.harga)}</td>
-                                                <td className="px-4 py-3 text-right">{formatRupiah(item.dp)}</td>
-                                                <td className="px-4 py-3">
-                                                    <Badge
-                                                        variant={
-                                                            item.status_kamar === 'tersedia' ? 'default' : 'destructive'
-                                                        }
-                                                    >
-                                                        {item.status_kamar}
-                                                    </Badge>
-                                                </td>
-                                                <td className="px-4 py-3 text-right">
-                                                    <div className="flex justify-end gap-2">
-                                                        <Button
-                                                            variant="outline"
-                                                            size="sm"
-                                                            onClick={() =>
-                                                                router.get(`/admin/kamar/${item.id_kamar}/edit`)
-                                                            }
-                                                        >
-                                                            <Pencil className="h-3 w-3" />
-                                                        </Button>
-                                                        <Button
-                                                            variant="destructive"
-                                                            size="sm"
-                                                            onClick={() => handleDelete(item.id_kamar)}
-                                                        >
-                                                            <Trash2 className="h-3 w-3" />
-                                                        </Button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
+                        <DataTable
+                            columns={columns}
+                            data={kamar.data}
+                            pagination={pagination}
+                            sorting={sorting}
+                            onSortingChange={(updater) => {
+                                const newSorting = typeof updater === 'function' ? updater(sorting) : updater;
 
-                        {kamar.last_page > 1 && (
-                            <div className="mt-4 flex items-center justify-between">
-                                <p className="text-sm text-muted-foreground">
-                                    Halaman {kamar.current_page} dari {kamar.last_page}
-                                </p>
-                                <div className="flex gap-1">
-                                    {kamar.links.map((link, i) => (
-                                        <Button
-                                            key={i}
-                                            variant={link.active ? 'default' : 'outline'}
-                                            size="sm"
-                                            disabled={!link.url}
-                                            onClick={() => link.url && router.get(link.url)}
-                                            dangerouslySetInnerHTML={{ __html: link.label }}
-                                        />
-                                    ))}
-                                </div>
-                            </div>
-                        )}
+                                if (newSorting.length > 0) {
+                                    handleSortChange(newSorting[0].id, newSorting[0].desc ? 'desc' : 'asc');
+                                }
+                            }}
+                            onPageChange={handlePageChange}
+                            onPageSizeChange={handlePageSizeChange}
+                            emptyMessage="Tidak ada data kamar."
+                        />
                     </CardContent>
                 </Card>
             </div>

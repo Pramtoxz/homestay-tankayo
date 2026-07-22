@@ -54,7 +54,7 @@ export default function CheckoutForm({ checkin }: Props) {
     return (
         <>
             <Head title="Check-out Baru" />
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
+            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-6">
                 <Card>
                     <CardHeader>
                         <div className="flex items-center gap-4">
@@ -65,14 +65,14 @@ export default function CheckoutForm({ checkin }: Props) {
                         </div>
                     </CardHeader>
                     <CardContent>
-                        <form onSubmit={handleSubmit} className="max-w-lg space-y-4">
+                        <form onSubmit={handleSubmit} className="max-w-2xl space-y-4">
                             <div className="space-y-2">
                                 <Label>Check-in</Label>
                                 <Select
                                     value={values.idcheckin}
                                     onValueChange={(v) => setValues((p) => ({ ...p, idcheckin: v }))}
                                 >
-                                    <SelectTrigger>
+                                    <SelectTrigger className="w-full">
                                         <SelectValue placeholder="Pilih check-in..." />
                                     </SelectTrigger>
                                     <SelectContent>

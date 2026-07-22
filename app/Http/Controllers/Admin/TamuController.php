@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Tamu;
-use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -14,7 +13,7 @@ class TamuController extends Controller
 {
     public function index(Request $request): Response
     {
-        $query = Tamu::with('user');
+        $query = Tamu::query();
 
         if ($search = $request->get('search')) {
             $query->where(function ($q) use ($search) {
@@ -24,21 +23,24 @@ class TamuController extends Controller
             });
         }
 
-        $tamu = $query->latest()->paginate($request->get('per_page', 10));
+        $sortBy = $request->get('sort_by', 'created_at');
+        $sortOrder = $request->get('sort_order', 'desc');
+        $allowedSorts = ['nik', 'nama', 'alamat', 'nohp', 'jk', 'created_at'];
+        if (in_array($sortBy, $allowedSorts)) {
+            $query->orderBy($sortBy, $sortOrder);
+        }
+
+        $tamu = $query->paginate($request->get('per_page', 25));
 
         return Inertia::render('admin/tamu/index', [
             'tamu' => $tamu,
-            'filters' => $request->only(['search', 'per_page']),
+            'filters' => $request->only(['search', 'per_page', 'sort_by', 'sort_order']),
         ]);
     }
 
     public function create(): Response
     {
-        $users = User::whereDoesntHave('tamu')->get(['id', 'name', 'email']);
-
-        return Inertia::render('admin/tamu/form', [
-            'users' => $users,
-        ]);
+        return Inertia::render('admin/tamu/form');
     }
 
     public function store(Request $request): RedirectResponse
@@ -49,22 +51,18 @@ class TamuController extends Controller
             'alamat' => 'required|string',
             'nohp' => 'required|string|max:30',
             'jk' => 'required|in:L,P',
-            'user_id' => 'nullable|exists:users,id',
         ]);
 
         Tamu::create($validated);
 
-        return redirect()->route('tamu.index')
+        return redirect()->route('admin.tamu.index')
             ->with('toast', ['type' => 'success', 'message' => 'Tamu berhasil ditambahkan.']);
     }
 
     public function edit(Tamu $tamu): Response
     {
-        $users = User::whereDoesntHave('tamu')->orWhere('id', $tamu->user_id)->get(['id', 'name', 'email']);
-
         return Inertia::render('admin/tamu/form', [
             'tamu' => $tamu,
-            'users' => $users,
         ]);
     }
 
@@ -75,12 +73,11 @@ class TamuController extends Controller
             'alamat' => 'required|string',
             'nohp' => 'required|string|max:30',
             'jk' => 'required|in:L,P',
-            'user_id' => 'nullable|exists:users,id',
         ]);
 
         $tamu->update($validated);
 
-        return redirect()->route('tamu.index')
+        return redirect()->route('admin.tamu.index')
             ->with('toast', ['type' => 'success', 'message' => 'Tamu berhasil diupdate.']);
     }
 
@@ -88,7 +85,7 @@ class TamuController extends Controller
     {
         $tamu->delete();
 
-        return redirect()->route('tamu.index')
+        return redirect()->route('admin.tamu.index')
             ->with('toast', ['type' => 'success', 'message' => 'Tamu berhasil dihapus.']);
     }
 }

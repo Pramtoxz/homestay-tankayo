@@ -13,21 +13,13 @@ type TamuData = {
     alamat: string;
     nohp: string;
     jk: string;
-    user_id: number | null;
-};
-
-type UserData = {
-    id: number;
-    name: string;
-    email: string;
 };
 
 type Props = {
     tamu?: TamuData;
-    users: UserData[];
 };
 
-export default function TamuForm({ tamu, users }: Props) {
+export default function TamuForm({ tamu }: Props) {
     const isEdit = !!tamu;
     const { errors } = usePage().props as { errors: Record<string, string> };
 
@@ -37,7 +29,6 @@ export default function TamuForm({ tamu, users }: Props) {
         alamat: tamu?.alamat ?? '',
         nohp: tamu?.nohp ?? '',
         jk: tamu?.jk ?? 'L',
-        user_id: tamu?.user_id?.toString() ?? '',
     });
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -46,23 +37,18 @@ export default function TamuForm({ tamu, users }: Props) {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        const payload: Record<string, string> = { ...values };
-
-        if (!payload.user_id) {
-delete payload.user_id;
-}
 
         if (isEdit) {
-            router.put(`/admin/tamu/${tamu!.nik}`, payload);
+            router.put(`/admin/tamu/${tamu!.nik}`, values);
         } else {
-            router.post('/admin/tamu', payload);
+            router.post('/admin/tamu', values);
         }
     };
 
     return (
         <>
             <Head title={isEdit ? 'Edit Tamu' : 'Tambah Tamu'} />
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
+            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-6">
                 <Card>
                     <CardHeader>
                         <div className="flex items-center gap-4">
@@ -73,7 +59,7 @@ delete payload.user_id;
                         </div>
                     </CardHeader>
                     <CardContent>
-                        <form onSubmit={handleSubmit} className="max-w-lg space-y-4">
+                        <form onSubmit={handleSubmit} className="max-w-2xl space-y-4">
                             <div className="space-y-2">
                                 <Label htmlFor="nik">NIK</Label>
                                 <Input
@@ -127,7 +113,7 @@ delete payload.user_id;
                             <div className="space-y-2">
                                 <Label>Jenis Kelamin</Label>
                                 <Select value={values.jk} onValueChange={(v) => setValues((p) => ({ ...p, jk: v }))}>
-                                    <SelectTrigger>
+                                    <SelectTrigger className="w-full">
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -136,26 +122,6 @@ delete payload.user_id;
                                     </SelectContent>
                                 </Select>
                                 {errors.jk && <p className="text-sm text-destructive">{errors.jk}</p>}
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label>Akun User (Opsional)</Label>
-                                <Select
-                                    value={values.user_id}
-                                    onValueChange={(v) => setValues((p) => ({ ...p, user_id: v }))}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Pilih user..." />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {users.map((u) => (
-                                            <SelectItem key={u.id} value={u.id.toString()}>
-                                                {u.name} ({u.email})
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                {errors.user_id && <p className="text-sm text-destructive">{errors.user_id}</p>}
                             </div>
 
                             <div className="flex gap-2 pt-4">

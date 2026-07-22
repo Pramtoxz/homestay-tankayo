@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { formatTanggal } from '@/lib/utils';
 
 type ReservasiDetail = {
     idbooking: string;
@@ -15,7 +16,7 @@ type ReservasiDetail = {
     tipe: string;
     status: string;
     tamu: { nik: string; nama: string; alamat: string; nohp: string; jk: string } | null;
-    kamar: { id_kamar: string; nama: string; harga: number; dp: number } | null;
+    kamar: { id_kamar: string; nama: string; harga: number; fasilitas: string | null } | null;
     checkin: {
         idcheckin: string;
         sisabayar: number;
@@ -59,7 +60,7 @@ export default function ReservasiShow({ reservasi }: Props) {
     return (
         <>
             <Head title={`Reservasi ${reservasi.idbooking}`} />
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
+            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-6">
                 <div className="flex items-center gap-4">
                     <Button variant="outline" size="icon" onClick={() => router.get('/admin/reservasi')}>
                         <ArrowLeft className="h-4 w-4" />
@@ -115,8 +116,8 @@ export default function ReservasiShow({ reservasi }: Props) {
                                 <span>{reservasi.kamar ? formatRupiah(reservasi.kamar.harga) : '-'}</span>
                             </div>
                             <div className="flex justify-between">
-                                <span className="text-muted-foreground">DP</span>
-                                <span>{reservasi.kamar ? formatRupiah(reservasi.kamar.dp) : '-'}</span>
+                                <span className="text-muted-foreground">Fasilitas</span>
+                                <span>{reservasi.kamar?.fasilitas ?? '-'}</span>
                             </div>
                         </CardContent>
                     </Card>
@@ -134,11 +135,11 @@ export default function ReservasiShow({ reservasi }: Props) {
                             </div>
                             <div className="flex justify-between">
                                 <span className="text-muted-foreground">Check-in</span>
-                                <span>{reservasi.tglcheckin}</span>
+                                <span>{formatTanggal(reservasi.tglcheckin)}</span>
                             </div>
                             <div className="flex justify-between">
                                 <span className="text-muted-foreground">Check-out</span>
-                                <span>{reservasi.tglcheckout}</span>
+                                <span>{formatTanggal(reservasi.tglcheckout)}</span>
                             </div>
                             <div className="flex justify-between">
                                 <span className="text-muted-foreground">Durasi</span>
@@ -200,7 +201,7 @@ export default function ReservasiShow({ reservasi }: Props) {
                                         </div>
                                         <div>
                                             <p className="text-muted-foreground">Tanggal</p>
-                                            <p className="font-medium">{reservasi.checkin.checkout.tglcheckout}</p>
+                                            <p className="font-medium">{formatTanggal(reservasi.checkin.checkout.tglcheckout)}</p>
                                         </div>
                                         <div>
                                             <p className="text-muted-foreground">Potongan</p>

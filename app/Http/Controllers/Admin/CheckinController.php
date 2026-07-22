@@ -26,11 +26,18 @@ class CheckinController extends Controller
             });
         }
 
-        $checkin = $query->latest()->paginate($request->get('per_page', 10));
+        $sortBy = $request->get('sort_by', 'created_at');
+        $sortOrder = $request->get('sort_order', 'desc');
+        $allowedSorts = ['idcheckin', 'idbooking', 'sisabayar', 'deposit', 'created_at'];
+        if (in_array($sortBy, $allowedSorts)) {
+            $query->orderBy($sortBy, $sortOrder);
+        }
+
+        $checkin = $query->paginate($request->get('per_page', 25));
 
         return Inertia::render('admin/checkin/index', [
             'checkin' => $checkin,
-            'filters' => $request->only(['search', 'per_page']),
+            'filters' => $request->only(['search', 'per_page', 'sort_by', 'sort_order']),
         ]);
     }
 
@@ -57,13 +64,13 @@ class CheckinController extends Controller
 
         Checkin::create($validated);
 
-        $reservasi = Reservasi::findOrFail($validated['idbooking']);
+        $reservasi = Reservasi::findOrFail((string) $validated['idbooking']);
         $reservasi->update(['status' => 'checkin']);
 
         Kamar::where('id_kamar', $reservasi->idkamar)
             ->update(['status_kamar' => 'tidak tersedia']);
 
-        return redirect()->route('checkin.index')
+        return redirect()->route('admin.checkin.index')
             ->with('toast', ['type' => 'success', 'message' => 'Check-in berhasil.']);
     }
 

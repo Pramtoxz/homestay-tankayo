@@ -20,7 +20,7 @@ class IdGenerator
 
         $seq = $last ? (int) substr($last, -4) + 1 : 1;
 
-        return $prefix.str_pad($seq, 4, '0', STR_PAD_LEFT);
+        return $prefix.str_pad((string) $seq, 4, '0', STR_PAD_LEFT);
     }
 
     public static function checkin(): string
@@ -32,7 +32,7 @@ class IdGenerator
 
         $seq = $last ? (int) substr($last, -4) + 1 : 1;
 
-        return $prefix.str_pad($seq, 4, '0', STR_PAD_LEFT);
+        return $prefix.str_pad((string) $seq, 4, '0', STR_PAD_LEFT);
     }
 
     public static function checkout(): string
@@ -44,7 +44,7 @@ class IdGenerator
 
         $seq = $last ? (int) substr($last, -4) + 1 : 1;
 
-        return $prefix.str_pad($seq, 4, '0', STR_PAD_LEFT);
+        return $prefix.str_pad((string) $seq, 4, '0', STR_PAD_LEFT);
     }
 
     public static function kamar(): string
@@ -55,7 +55,7 @@ class IdGenerator
 
         $seq = $last ? (int) substr($last, 2) + 1 : 1;
 
-        return 'KM'.str_pad($seq, 4, '0', STR_PAD_LEFT);
+        return 'KM'.str_pad((string) $seq, 4, '0', STR_PAD_LEFT);
     }
 
     public static function pengeluaran(): string
@@ -64,6 +64,6 @@ class IdGenerator
 
         $seq = $last ? $last + 1 : 1;
 
-        return 'PG'.str_pad($seq, 4, '0', STR_PAD_LEFT);
+        return 'PG'.str_pad((string) $seq, 4, '0', STR_PAD_LEFT);
     }
 }

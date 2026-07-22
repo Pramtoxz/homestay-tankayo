@@ -6,13 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 type KamarItem = {
     id_kamar: string;
     nama: string;
     harga: number;
-    dp: number;
+    fasilitas: string | null;
     cover: string | null;
     deskripsi: string | null;
 };
@@ -36,7 +35,6 @@ export default function Booking({ kamar }: Props) {
     const [selectedKamar, setSelectedKamar] = useState('');
     const [tglcheckin, setTglcheckin] = useState('');
     const [tglcheckout, setTglcheckout] = useState('');
-    const [tipe, setTipe] = useState('transfer');
     const [checking, setChecking] = useState(false);
     const [available, setAvailable] = useState<boolean | null>(null);
     const [total, setTotal] = useState(0);
@@ -53,14 +51,6 @@ export default function Booking({ kamar }: Props) {
 
         return Math.max(Math.ceil(diff / (1000 * 60 * 60 * 24)), 0);
     }, [tglcheckin, tglcheckout]);
-
-    const displayTotal = useMemo(() => {
-        if (tipe === 'dp' && selectedRoom) {
-            return selectedRoom.dp * Math.max(days, 1);
-        }
-
-        return total;
-    }, [tipe, total, selectedRoom, days]);
 
     const handleCheckAvailability = useCallback(async () => {
         if (!selectedKamar || !tglcheckin || !tglcheckout) {
@@ -103,8 +93,8 @@ export default function Booking({ kamar }: Props) {
             idkamar: selectedKamar,
             tglcheckin,
             tglcheckout,
-            totalbayar: displayTotal,
-            tipe,
+            totalbayar: total,
+            tipe: 'transfer',
         }, {
             onFinish: () => setSubmitting(false),
         });
@@ -236,19 +226,6 @@ export default function Booking({ kamar }: Props) {
                                         </div>
                                     )}
 
-                                    <div className="space-y-2">
-                                        <Label>Tipe Pembayaran</Label>
-                                        <Select value={tipe} onValueChange={setTipe}>
-                                            <SelectTrigger>
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="transfer">Transfer (Lunas)</SelectItem>
-                                                <SelectItem value="dp">DP</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-
                                     {selectedRoom && days > 0 && (
                                         <div className="rounded-md bg-muted p-3 text-sm space-y-1">
                                             <div className="flex justify-between">
@@ -259,20 +236,14 @@ export default function Booking({ kamar }: Props) {
                                                 <span>Durasi</span>
                                                 <span>{days} malam</span>
                                             </div>
-                                            {tipe === 'dp' && (
-                                                <div className="flex justify-between">
-                                                    <span>DP/Malam</span>
-                                                    <span>{formatRupiah(selectedRoom.dp)}</span>
-                                                </div>
-                                            )}
                                             <div className="flex justify-between border-t pt-1 font-semibold">
                                                 <span>Total Bayar</span>
-                                                <span>{formatRupiah(displayTotal)}</span>
+                                                <span>{formatRupiah(total)}</span>
                                             </div>
                                         </div>
                                     )}
 
-                                    <input type="hidden" name="totalbayar" value={displayTotal} />
+                                    <input type="hidden" name="totalbayar" value={total} />
 
                                     <Button
                                         type="submit"

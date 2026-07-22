@@ -11,8 +11,9 @@ return new class extends Migration
         Schema::create('kamar', function (Blueprint $table) {
             $table->char('id_kamar', 30)->primary();
             $table->string('nama', 50);
+            $table->string('tipe_kamar', 50);
             $table->double('harga');
-            $table->double('dp')->default(0);
+            $table->text('fasilitas')->nullable();
             $table->string('status_kamar', 30)->default('tersedia');
             $table->string('cover', 255)->nullable();
             $table->text('deskripsi')->nullable();

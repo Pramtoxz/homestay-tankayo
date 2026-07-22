@@ -8,8 +8,12 @@ type Props = {
     variant?: AppVariant;
 };
 
+type PageProps = {
+    sidebarOpen: boolean;
+};
+
 export function AppShell({ children, variant = 'sidebar' }: Props) {
-    const isOpen = usePage().props.sidebarOpen;
+    const isOpen = usePage<PageProps>().props.sidebarOpen;
 
     if (variant === 'header') {
         return (

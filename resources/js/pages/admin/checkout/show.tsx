@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { formatTanggal } from '@/lib/utils';
 
 type CheckoutDetail = {
     idcheckout: string;
@@ -41,7 +42,7 @@ export default function CheckoutShow({ checkout }: Props) {
     return (
         <>
             <Head title={`Check-out ${checkout.idcheckout}`} />
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
+            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-6">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
                         <Button variant="outline" size="icon" onClick={() => router.get('/admin/checkout')}>
@@ -64,7 +65,7 @@ export default function CheckoutShow({ checkout }: Props) {
                             </div>
                             <div className="text-right text-sm">
                                 <p className="font-mono font-semibold">{checkout.idcheckout}</p>
-                                <p className="text-muted-foreground">{checkout.tglcheckout}</p>
+                                <p className="text-muted-foreground">{formatTanggal(checkout.tglcheckout)}</p>
                             </div>
                         </div>
                     </CardHeader>
@@ -96,11 +97,11 @@ export default function CheckoutShow({ checkout }: Props) {
                             </div>
                             <div>
                                 <p className="text-muted-foreground">Check-in</p>
-                                <p className="font-medium">{r?.tglcheckin ?? '-'}</p>
+                                <p className="font-medium">{formatTanggal(r?.tglcheckin)}</p>
                             </div>
                             <div>
                                 <p className="text-muted-foreground">Check-out</p>
-                                <p className="font-medium">{r?.tglcheckout ?? '-'}</p>
+                                <p className="font-medium">{formatTanggal(r?.tglcheckout)}</p>
                             </div>
                             <div>
                                 <p className="text-muted-foreground">Tipe Bayar</p>

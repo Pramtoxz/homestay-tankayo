@@ -24,10 +24,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware('role:admin')->prefix('admin')->name('admin.')->group(function () {
         Route::resource('tamu', TamuController::class)->except(['show']);
         Route::resource('kamar', KamarController::class)->except(['show']);
+        Route::get('reservasi-search/tamu', [ReservasiController::class, 'searchTamu'])->name('reservasi.search-tamu');
+        Route::get('reservasi-search/kamar', [ReservasiController::class, 'searchKamar'])->name('reservasi.search-kamar');
+        Route::get('reservasi/{reservasi}/faktur', [ReservasiController::class, 'faktur'])->name('reservasi.faktur');
         Route::resource('reservasi', ReservasiController::class);
         Route::resource('checkin', CheckinController::class)->only(['index', 'create', 'store', 'show']);
         Route::resource('checkout', CheckoutController::class)->only(['index', 'create', 'store', 'show']);
-        Route::resource('pengeluaran', PengeluaranController::class)->only(['index', 'store', 'update', 'destroy']);
+        Route::resource('pengeluaran', PengeluaranController::class)->except(['show']);
     });
 
     // Laporan — admin + pimpinan

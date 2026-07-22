@@ -32,7 +32,7 @@ class BookingService
             ]);
     }
 
-    public static function hitungTotal(int $harga, string $tglcheckin, string $tglcheckout): int
+    public static function hitungTotal(float $harga, string $tglcheckin, string $tglcheckout): float
     {
         $start = Carbon::parse($tglcheckin);
         $end = Carbon::parse($tglcheckout);

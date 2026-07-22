@@ -12,6 +12,7 @@ return new class extends Migration
             $table->string('idbooking', 30)->primary();
             $table->char('nik', 30);
             $table->char('idkamar', 30);
+            $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
             $table->date('tglcheckin');
             $table->date('tglcheckout');
             $table->double('totalbayar')->default(0);

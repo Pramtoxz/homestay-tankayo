@@ -14,13 +14,20 @@ return new class extends Migration
             $table->text('alamat');
             $table->char('nohp', 30);
             $table->enum('jk', ['L', 'P']);
-            $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
             $table->timestamps();
+        });
+
+        Schema::table('users', function (Blueprint $table) {
+            $table->foreign('current_nik')->references('nik')->on('tamu')->nullOnDelete();
         });
     }
 
     public function down(): void
     {
+        Schema::table('users', function (Blueprint $table) {
+            $table->dropForeign(['current_nik']);
+        });
+
         Schema::dropIfExists('tamu');
     }
 };

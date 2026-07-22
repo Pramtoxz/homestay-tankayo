@@ -3,6 +3,7 @@ import { CalendarCheck, CalendarPlus, History, ArrowRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { formatTanggal } from '@/lib/utils';
 
 type Stats = {
     total_booking: number;
@@ -23,7 +24,7 @@ type RoomItem = {
     id_kamar: string;
     nama: string;
     harga: number;
-    dp: number;
+    fasilitas: string | null;
     cover: string | null;
     deskripsi: string | null;
 };
@@ -127,7 +128,7 @@ export default function PortalDashboard({ stats, recentBookings, availableRooms,
                                             <div>
                                                 <p className="font-medium">{b.kamar?.nama ?? '-'}</p>
                                                 <p className="text-muted-foreground">
-                                                    {b.tglcheckin} — {b.tglcheckout}
+                                                    {formatTanggal(b.tglcheckin)} — {formatTanggal(b.tglcheckout)}
                                                 </p>
                                             </div>
                                             <div className="text-right">

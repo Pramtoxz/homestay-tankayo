@@ -1,18 +1,14 @@
-import { Head, router, usePage } from '@inertiajs/react';
-import { Plus, Pencil, Trash2, Search } from 'lucide-react';
-import { useState, useCallback } from 'react';
+import { Head, router } from '@inertiajs/react';
+import type {ColumnDef} from '@tanstack/react-table';
+import { Plus, Pencil, Trash2 } from 'lucide-react';
+import { useCallback, useMemo } from 'react';
+import { DataTable, SortableHeader  } from '@/components/data-table';
+import type {PaginationMeta} from '@/components/data-table';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogFooter,
-} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { formatTanggal } from '@/lib/utils';
 
 type PengeluaranItem = {
     id: number;
@@ -21,23 +17,21 @@ type PengeluaranItem = {
     total: number;
 };
 
-type PaginationLink = {
-    url: string | null;
-    label: string;
-    active: boolean;
-};
-
 type Props = {
     pengeluaran: {
         data: PengeluaranItem[];
-        links: PaginationLink[];
         current_page: number;
         last_page: number;
+        per_page: number;
+        total: number;
     };
     filters: {
         search?: string;
         bulan?: string;
         tahun?: string;
+        per_page?: string;
+        sort_by?: string;
+        sort_order?: string;
     };
 };
 
@@ -60,229 +54,147 @@ const bulanOptions = [
 ];
 
 export default function PengeluaranIndex({ pengeluaran, filters }: Props) {
-    const { errors } = usePage().props as { errors: Record<string, string> };
+    const search = filters.search ?? '';
+    const bulan = filters.bulan ?? '';
+    const tahun = filters.tahun ?? '';
 
-    const [search, setSearch] = useState(filters.search ?? '');
-    const [bulan, setBulan] = useState(filters.bulan ?? '');
-    const [tahun, setTahun] = useState(filters.tahun ?? '');
+    const handleSearch = useCallback((value: string) => {
+        router.get('/admin/pengeluaran', { ...filters, search: value, page: 1 }, { preserveState: true });
+    }, [filters]);
 
-    const [dialogOpen, setDialogOpen] = useState(false);
-    const [editItem, setEditItem] = useState<PengeluaranItem | null>(null);
-    const [formValues, setFormValues] = useState({ tgl: '', keterangan: '', total: '' });
+    const handleFilter = useCallback((key: string, value: string) => {
+        router.get('/admin/pengeluaran', { ...filters, [key]: value, page: 1 }, { preserveState: true });
+    }, [filters]);
 
-    const handleSearch = useCallback(() => {
-        router.get('/admin/pengeluaran', { search, bulan, tahun }, { preserveState: true });
-    }, [search, bulan, tahun]);
-
-    const handleFilter = useCallback(() => {
-        router.get('/admin/pengeluaran', { search, bulan, tahun }, { preserveState: true });
-    }, [search, bulan, tahun]);
-
-    const openCreate = () => {
-        setEditItem(null);
-        setFormValues({ tgl: '', keterangan: '', total: '' });
-        setDialogOpen(true);
-    };
-
-    const openEdit = (item: PengeluaranItem) => {
-        setEditItem(item);
-        setFormValues({ tgl: item.tgl, keterangan: item.keterangan, total: item.total.toString() });
-        setDialogOpen(true);
-    };
-
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-
-        if (editItem) {
-            router.put(`/admin/pengeluaran/${editItem.id}`, formValues, {
-                onSuccess: () => setDialogOpen(false),
-            });
-        } else {
-            router.post('/admin/pengeluaran', formValues, {
-                onSuccess: () => setDialogOpen(false),
-            });
-        }
-    };
-
-    const handleDelete = (id: number) => {
+    const handleDelete = useCallback((id: number) => {
         if (confirm('Yakin ingin menghapus pengeluaran ini?')) {
             router.delete(`/admin/pengeluaran/${id}`);
         }
+    }, []);
+
+    const handlePageChange = useCallback((page: number) => {
+        router.get('/admin/pengeluaran', { ...filters, page }, { preserveState: true });
+    }, [filters]);
+
+    const handlePageSizeChange = useCallback((perPage: number) => {
+        router.get('/admin/pengeluaran', { ...filters, per_page: perPage, page: 1 }, { preserveState: true });
+    }, [filters]);
+
+    const handleSortChange = useCallback((sortBy: string, sortOrder: 'asc' | 'desc') => {
+        router.get('/admin/pengeluaran', { ...filters, sort_by: sortBy, sort_order: sortOrder, page: 1 }, { preserveState: true });
+    }, [filters]);
+
+    const columns: ColumnDef<PengeluaranItem>[] = useMemo(() => [
+        {
+            accessorKey: 'tgl',
+            header: ({ column }) => <SortableHeader title="Tanggal" column={column} />,
+            cell: ({ row }) => formatTanggal(row.original.tgl),
+        },
+        {
+            accessorKey: 'keterangan',
+            header: ({ column }) => <SortableHeader title="Keterangan" column={column} />,
+            cell: ({ row }) => row.original.keterangan,
+        },
+        {
+            accessorKey: 'total',
+            header: ({ column }) => <SortableHeader title="Total" column={column} className="justify-end" />,
+            cell: ({ row }) => <div className="text-right font-medium">{formatRupiah(row.original.total)}</div>,
+        },
+        {
+            id: 'aksi',
+            header: () => <div className="text-right">Aksi</div>,
+            cell: ({ row }) => (
+                <div className="flex justify-end gap-2">
+                    <Button variant="outline" size="sm" onClick={() => router.get(`/admin/pengeluaran/${row.original.id}/edit`)}>
+                        <Pencil className="h-3 w-3" />
+                    </Button>
+                    <Button variant="destructive" size="sm" onClick={() => handleDelete(row.original.id)}>
+                        <Trash2 className="h-3 w-3" />
+                    </Button>
+                </div>
+            ),
+        },
+    ], [handleDelete]);
+
+    const sorting = useMemo(() => {
+        const sortBy = filters.sort_by ?? 'tgl';
+        const sortOrder = filters.sort_order ?? 'desc';
+
+        return [{ id: sortBy, desc: sortOrder === 'desc' }];
+    }, [filters.sort_by, filters.sort_order]);
+
+    const pagination: PaginationMeta = {
+        current_page: pengeluaran.current_page,
+        last_page: pengeluaran.last_page,
+        per_page: pengeluaran.per_page,
+        total: pengeluaran.total,
     };
 
     return (
         <>
             <Head title="Pengeluaran" />
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
+            <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-6">
                 <Card>
                     <CardHeader>
                         <div className="flex items-center justify-between">
                             <CardTitle>Pengeluaran</CardTitle>
-                            <Button onClick={openCreate}>
+                            <Button onClick={() => router.get('/admin/pengeluaran/create')}>
                                 <Plus className="h-4 w-4" />
                                 Tambah Pengeluaran
                             </Button>
                         </div>
                     </CardHeader>
                     <CardContent>
-                        <div className="mb-4 flex flex-wrap gap-2">
+                        <div className="mb-4 flex flex-wrap items-center gap-3">
                             <Input
                                 placeholder="Cari keterangan..."
                                 value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                                className="max-w-xs"
+                                onChange={(e) => handleSearch(e.target.value)}
+                                className="w-72"
                             />
-                            <Select value={bulan || 'all'} onValueChange={(v) => setBulan(v === 'all' ? '' : v)}>
-                                <SelectTrigger className="w-[150px]">
+                            <Select value={bulan || 'all'} onValueChange={(v) => handleFilter('bulan', v === 'all' ? '' : v)}>
+                                <SelectTrigger className="w-48">
                                     <SelectValue placeholder="Bulan" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="all">Semua Bulan</SelectItem>
                                     {bulanOptions.map((b) => (
-                                        <SelectItem key={b.value} value={b.value}>
-                                            {b.label}
-                                        </SelectItem>
+                                        <SelectItem key={b.value} value={b.value}>{b.label}</SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
-                            <Select value={tahun || 'all'} onValueChange={(v) => setTahun(v === 'all' ? '' : v)}>
-                                <SelectTrigger className="w-[120px]">
+                            <Select value={tahun || 'all'} onValueChange={(v) => handleFilter('tahun', v === 'all' ? '' : v)}>
+                                <SelectTrigger className="w-48">
                                     <SelectValue placeholder="Tahun" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="all">Semua</SelectItem>
+                                    <SelectItem value="all">Semua Tahun</SelectItem>
                                     {[2024, 2025, 2026, 2027].map((y) => (
-                                        <SelectItem key={y} value={y.toString()}>
-                                            {y}
-                                        </SelectItem>
+                                        <SelectItem key={y} value={y.toString()}>{y}</SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
-                            <Button variant="outline" onClick={handleFilter}>
-                                <Search className="h-4 w-4" />
-                            </Button>
                         </div>
 
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-sm">
-                                <thead>
-                                    <tr className="border-b">
-                                        <th className="px-4 py-3 text-left font-medium">Tanggal</th>
-                                        <th className="px-4 py-3 text-left font-medium">Keterangan</th>
-                                        <th className="px-4 py-3 text-right font-medium">Total</th>
-                                        <th className="px-4 py-3 text-right font-medium">Aksi</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {pengeluaran.data.length === 0 ? (
-                                        <tr>
-                                            <td colSpan={4} className="px-4 py-8 text-center text-muted-foreground">
-                                                Tidak ada data pengeluaran.
-                                            </td>
-                                        </tr>
-                                    ) : (
-                                        pengeluaran.data.map((item) => (
-                                            <tr key={item.id} className="border-b hover:bg-muted/50">
-                                                <td className="px-4 py-3">{item.tgl}</td>
-                                                <td className="px-4 py-3">{item.keterangan}</td>
-                                                <td className="px-4 py-3 text-right font-medium">
-                                                    {formatRupiah(item.total)}
-                                                </td>
-                                                <td className="px-4 py-3 text-right">
-                                                    <div className="flex justify-end gap-2">
-                                                        <Button
-                                                            variant="outline"
-                                                            size="sm"
-                                                            onClick={() => openEdit(item)}
-                                                        >
-                                                            <Pencil className="h-3 w-3" />
-                                                        </Button>
-                                                        <Button
-                                                            variant="destructive"
-                                                            size="sm"
-                                                            onClick={() => handleDelete(item.id)}
-                                                        >
-                                                            <Trash2 className="h-3 w-3" />
-                                                        </Button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
+                        <DataTable
+                            columns={columns}
+                            data={pengeluaran.data}
+                            pagination={pagination}
+                            sorting={sorting}
+                            onSortingChange={(updater) => {
+                                const newSorting = typeof updater === 'function' ? updater(sorting) : updater;
 
-                        {pengeluaran.last_page > 1 && (
-                            <div className="mt-4 flex items-center justify-between">
-                                <p className="text-sm text-muted-foreground">
-                                    Halaman {pengeluaran.current_page} dari {pengeluaran.last_page}
-                                </p>
-                                <div className="flex gap-1">
-                                    {pengeluaran.links.map((link, i) => (
-                                        <Button
-                                            key={i}
-                                            variant={link.active ? 'default' : 'outline'}
-                                            size="sm"
-                                            disabled={!link.url}
-                                            onClick={() => link.url && router.get(link.url)}
-                                            dangerouslySetInnerHTML={{ __html: link.label }}
-                                        />
-                                    ))}
-                                </div>
-                            </div>
-                        )}
+                                if (newSorting.length > 0) {
+                                    handleSortChange(newSorting[0].id, newSorting[0].desc ? 'desc' : 'asc');
+                                }
+                            }}
+                            onPageChange={handlePageChange}
+                            onPageSizeChange={handlePageSizeChange}
+                            emptyMessage="Tidak ada data pengeluaran."
+                        />
                     </CardContent>
                 </Card>
             </div>
-
-            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>{editItem ? 'Edit Pengeluaran' : 'Tambah Pengeluaran'}</DialogTitle>
-                    </DialogHeader>
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="tgl">Tanggal</Label>
-                            <Input
-                                id="tgl"
-                                type="date"
-                                value={formValues.tgl}
-                                onChange={(e) => setFormValues((p) => ({ ...p, tgl: e.target.value }))}
-                            />
-                            {errors.tgl && <p className="text-sm text-destructive">{errors.tgl}</p>}
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="keterangan">Keterangan</Label>
-                            <Input
-                                id="keterangan"
-                                value={formValues.keterangan}
-                                onChange={(e) => setFormValues((p) => ({ ...p, keterangan: e.target.value }))}
-                                placeholder="Keterangan pengeluaran"
-                            />
-                            {errors.keterangan && <p className="text-sm text-destructive">{errors.keterangan}</p>}
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="total">Total</Label>
-                            <Input
-                                id="total"
-                                type="number"
-                                value={formValues.total}
-                                onChange={(e) => setFormValues((p) => ({ ...p, total: e.target.value }))}
-                                placeholder="0"
-                            />
-                            {errors.total && <p className="text-sm text-destructive">{errors.total}</p>}
-                        </div>
-                        <DialogFooter>
-                            <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
-                                Batal
-                            </Button>
-                            <Button type="submit">{editItem ? 'Update' : 'Simpan'}</Button>
-                        </DialogFooter>
-                    </form>
-                </DialogContent>
-            </Dialog>
         </>
     );
 }

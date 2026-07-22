@@ -13,6 +13,7 @@ import {
     DialogTrigger,
 } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
+import { formatTanggal } from '@/lib/utils';
 
 type ReservasiDetail = {
     idbooking: string;
@@ -27,7 +28,7 @@ type ReservasiDetail = {
     online: boolean;
     batas_waktu: string | null;
     tamu: { nik: string; nama: string; alamat: string; nohp: string } | null;
-    kamar: { id_kamar: string; nama: string; harga: number; dp: number } | null;
+    kamar: { id_kamar: string; nama: string; harga: number; fasilitas: string | null } | null;
 };
 
 type Props = {
@@ -168,11 +169,11 @@ export default function BookingDetail({ reservasi }: Props) {
                             </div>
                             <div className="flex justify-between">
                                 <span className="text-muted-foreground">Check-in</span>
-                                <span>{reservasi.tglcheckin}</span>
+                                <span>{formatTanggal(reservasi.tglcheckin)}</span>
                             </div>
                             <div className="flex justify-between">
                                 <span className="text-muted-foreground">Check-out</span>
-                                <span>{reservasi.tglcheckout}</span>
+                                <span>{formatTanggal(reservasi.tglcheckout)}</span>
                             </div>
                             <div className="flex justify-between">
                                 <span className="text-muted-foreground">Durasi</span>

@@ -3,6 +3,7 @@ import { Eye, History } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { formatTanggal } from '@/lib/utils';
 
 type ReservasiItem = {
     idbooking: string;
@@ -87,8 +88,8 @@ export default function BookingHistory({ reservasi }: Props) {
                                             <tr key={item.idbooking} className="border-b hover:bg-muted/50">
                                                 <td className="px-4 py-3 font-mono text-xs">{item.idbooking}</td>
                                                 <td className="px-4 py-3">{item.kamar?.nama ?? '-'}</td>
-                                                <td className="px-4 py-3">{item.tglcheckin}</td>
-                                                <td className="px-4 py-3">{item.tglcheckout}</td>
+                                                <td className="px-4 py-3">{formatTanggal(item.tglcheckin)}</td>
+                                                <td className="px-4 py-3">{formatTanggal(item.tglcheckout)}</td>
                                                 <td className="px-4 py-3 text-right">{formatRupiah(item.totalbayar)}</td>
                                                 <td className="px-4 py-3">
                                                     <Badge variant="outline">{item.tipe}</Badge>

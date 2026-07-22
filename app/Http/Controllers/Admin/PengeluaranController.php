@@ -27,12 +27,24 @@ class PengeluaranController extends Controller
             $query->whereYear('tgl', $tahun);
         }
 
-        $pengeluaran = $query->latest('tgl')->paginate($request->get('per_page', 10));
+        $sortBy = $request->get('sort_by', 'tgl');
+        $sortOrder = $request->get('sort_order', 'desc');
+        $allowedSorts = ['tgl', 'keterangan', 'total', 'created_at'];
+        if (in_array($sortBy, $allowedSorts)) {
+            $query->orderBy($sortBy, $sortOrder);
+        }
+
+        $pengeluaran = $query->paginate($request->get('per_page', 25));
 
         return Inertia::render('admin/pengeluaran/index', [
             'pengeluaran' => $pengeluaran,
-            'filters' => $request->only(['search', 'bulan', 'tahun', 'per_page']),
+            'filters' => $request->only(['search', 'bulan', 'tahun', 'per_page', 'sort_by', 'sort_order']),
         ]);
+    }
+
+    public function create(): Response
+    {
+        return Inertia::render('admin/pengeluaran/form');
     }
 
     public function store(Request $request): RedirectResponse
@@ -45,8 +57,15 @@ class PengeluaranController extends Controller
 
         Pengeluaran::create($validated);
 
-        return redirect()->route('pengeluaran.index')
+        return redirect()->route('admin.pengeluaran.index')
             ->with('toast', ['type' => 'success', 'message' => 'Pengeluaran berhasil ditambahkan.']);
+    }
+
+    public function edit(Pengeluaran $pengeluaran): Response
+    {
+        return Inertia::render('admin/pengeluaran/form', [
+            'pengeluaran' => $pengeluaran,
+        ]);
     }
 
     public function update(Request $request, Pengeluaran $pengeluaran): RedirectResponse
@@ -59,7 +78,7 @@ class PengeluaranController extends Controller
 
         $pengeluaran->update($validated);
 
-        return redirect()->route('pengeluaran.index')
+        return redirect()->route('admin.pengeluaran.index')
             ->with('toast', ['type' => 'success', 'message' => 'Pengeluaran berhasil diupdate.']);
     }
 
@@ -67,7 +86,7 @@ class PengeluaranController extends Controller
     {
         $pengeluaran->delete();
 
-        return redirect()->route('pengeluaran.index')
+        return redirect()->route('admin.pengeluaran.index')
             ->with('toast', ['type' => 'success', 'message' => 'Pengeluaran berhasil dihapus.']);
     }
 }

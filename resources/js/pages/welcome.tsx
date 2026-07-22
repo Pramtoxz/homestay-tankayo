@@ -1,9 +1,14 @@
 import { Head, Link, usePage } from '@inertiajs/react';
 import { dashboard, login } from '@/routes';
 import { register } from '@/routes';
+import type { Auth } from '@/types';
+
+type PageProps = {
+    auth: Auth;
+};
 
 export default function Welcome() {
-    const { auth } = usePage().props;
+    const { auth } = usePage<PageProps>().props;
 
     return (
         <>

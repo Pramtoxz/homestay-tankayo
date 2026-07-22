@@ -5,6 +5,7 @@ namespace App\Models;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
@@ -14,6 +15,7 @@ use Illuminate\Support\Carbon;
  * @property string $name
  * @property string $email
  * @property string $role
+ * @property string|null $current_nik
  * @property Carbon|null $email_verified_at
  * @property string $password
  * @property string|null $remember_token
@@ -30,6 +32,7 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'current_nik',
     ];
 
     protected $hidden = [
@@ -58,5 +61,13 @@ class User extends Authenticatable
     public function isUser(): bool
     {
         return $this->role === 'user';
+    }
+
+    /**
+     * @return BelongsTo<Tamu, $this>
+     */
+    public function currentTamu(): BelongsTo
+    {
+        return $this->belongsTo(Tamu::class, 'current_nik', 'nik');
     }
 }

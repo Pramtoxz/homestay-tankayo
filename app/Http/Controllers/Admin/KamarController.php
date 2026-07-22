@@ -27,11 +27,18 @@ class KamarController extends Controller
             $query->where('status_kamar', $status);
         }
 
-        $kamar = $query->latest()->paginate($request->get('per_page', 10));
+        $sortBy = $request->get('sort_by', 'created_at');
+        $sortOrder = $request->get('sort_order', 'desc');
+        $allowedSorts = ['id_kamar', 'nama', 'tipe_kamar', 'harga', 'status_kamar', 'created_at'];
+        if (in_array($sortBy, $allowedSorts)) {
+            $query->orderBy($sortBy, $sortOrder);
+        }
+
+        $kamar = $query->paginate($request->get('per_page', 25));
 
         return Inertia::render('admin/kamar/index', [
             'kamar' => $kamar,
-            'filters' => $request->only(['search', 'status', 'per_page']),
+            'filters' => $request->only(['search', 'status', 'per_page', 'sort_by', 'sort_order']),
         ]);
     }
 
@@ -46,8 +53,9 @@ class KamarController extends Controller
     {
         $validated = $request->validate([
             'nama' => 'required|string|max:50',
+            'tipe_kamar' => 'required|in:Superior Room Balcony,Deluxe Room Balcony,Twinbed Room Balcony,Junior Suite Room Balcony,Triple Room Balcony',
             'harga' => 'required|numeric|min:0',
-            'dp' => 'required|numeric|min:0',
+            'fasilitas' => 'nullable|string',
             'deskripsi' => 'nullable|string',
             'cover' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
             'status_kamar' => 'required|in:tersedia,tidak tersedia',
@@ -61,7 +69,7 @@ class KamarController extends Controller
 
         Kamar::create($validated);
 
-        return redirect()->route('kamar.index')
+        return redirect()->route('admin.kamar.index')
             ->with('toast', ['type' => 'success', 'message' => 'Kamar berhasil ditambahkan.']);
     }
 
@@ -76,8 +84,9 @@ class KamarController extends Controller
     {
         $validated = $request->validate([
             'nama' => 'required|string|max:50',
+            'tipe_kamar' => 'required|in:Superior Room Balcony,Deluxe Room Balcony,Twinbed Room Balcony,Junior Suite Room Balcony,Triple Room Balcony',
             'harga' => 'required|numeric|min:0',
-            'dp' => 'required|numeric|min:0',
+            'fasilitas' => 'nullable|string',
             'deskripsi' => 'nullable|string',
             'cover' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
             'status_kamar' => 'required|in:tersedia,tidak tersedia',
@@ -92,7 +101,7 @@ class KamarController extends Controller
 
         $kamar->update($validated);
 
-        return redirect()->route('kamar.index')
+        return redirect()->route('admin.kamar.index')
             ->with('toast', ['type' => 'success', 'message' => 'Kamar berhasil diupdate.']);
     }
 
@@ -104,7 +113,7 @@ class KamarController extends Controller
 
         $kamar->delete();
 
-        return redirect()->route('kamar.index')
+        return redirect()->route('admin.kamar.index')
             ->with('toast', ['type' => 'success', 'message' => 'Kamar berhasil dihapus.']);
     }
 }

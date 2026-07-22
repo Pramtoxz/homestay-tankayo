@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { formatTanggal } from '@/lib/utils';
 
 type ReservasiOption = {
     idbooking: string;
@@ -46,7 +47,7 @@ export default function CheckinForm({ reservasi }: Props) {
     return (
         <>
             <Head title="Check-in Baru" />
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
+            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-6">
                 <Card>
                     <CardHeader>
                         <div className="flex items-center gap-4">
@@ -57,14 +58,14 @@ export default function CheckinForm({ reservasi }: Props) {
                         </div>
                     </CardHeader>
                     <CardContent>
-                        <form onSubmit={handleSubmit} className="max-w-lg space-y-4">
+                        <form onSubmit={handleSubmit} className="max-w-2xl space-y-4">
                             <div className="space-y-2">
                                 <Label>Reservasi</Label>
                                 <Select
                                     value={values.idbooking}
                                     onValueChange={(v) => setValues((p) => ({ ...p, idbooking: v }))}
                                 >
-                                    <SelectTrigger>
+                                    <SelectTrigger className="w-full">
                                         <SelectValue placeholder="Pilih reservasi..." />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -82,8 +83,8 @@ export default function CheckinForm({ reservasi }: Props) {
                                 <div className="rounded-md bg-muted p-4 text-sm space-y-1">
                                     <p><span className="text-muted-foreground">Tamu:</span> {selectedReservasi.tamu?.nama ?? '-'}</p>
                                     <p><span className="text-muted-foreground">Kamar:</span> {selectedReservasi.kamar?.nama ?? '-'}</p>
-                                    <p><span className="text-muted-foreground">Check-in:</span> {selectedReservasi.tglcheckin}</p>
-                                    <p><span className="text-muted-foreground">Check-out:</span> {selectedReservasi.tglcheckout}</p>
+                                    <p><span className="text-muted-foreground">Check-in:</span> {formatTanggal(selectedReservasi.tglcheckin)}</p>
+                                    <p><span className="text-muted-foreground">Check-out:</span> {formatTanggal(selectedReservasi.tglcheckout)}</p>
                                     <p><span className="text-muted-foreground">Total:</span> {formatRupiah(selectedReservasi.totalbayar)}</p>
                                 </div>
                             )}
