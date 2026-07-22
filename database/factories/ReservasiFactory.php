@@ -33,7 +33,7 @@ class ReservasiFactory extends Factory
             'tglcheckin' => $checkin->format('Y-m-d'),
             'tglcheckout' => $checkout->format('Y-m-d'),
             'totalbayar' => $harga * $nights,
-            'tipe' => fake()->randomElement(['cash', 'transfer', 'dp']),
+            'tipe' => fake()->randomElement(['cash', 'transfer']),
             'online' => fake()->boolean(30),
             'status' => fake()->randomElement(['diproses', 'diterima', 'diterima', 'checkin', 'selesai', 'selesai', 'ditolak', 'cancel']),
             'batas_waktu' => null,

@@ -7,6 +7,7 @@ use App\Models\Checkin;
 use App\Models\Kamar;
 use App\Models\Reservasi;
 use App\Services\IdGenerator;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -28,7 +29,7 @@ class CheckinController extends Controller
 
         $sortBy = $request->get('sort_by', 'created_at');
         $sortOrder = $request->get('sort_order', 'desc');
-        $allowedSorts = ['idcheckin', 'idbooking', 'sisabayar', 'deposit', 'created_at'];
+        $allowedSorts = ['idcheckin', 'idbooking', 'deposit', 'created_at'];
         if (in_array($sortBy, $allowedSorts)) {
             $query->orderBy($sortBy, $sortOrder);
         }
@@ -43,20 +44,30 @@ class CheckinController extends Controller
 
     public function create(): Response
     {
-        $reservasi = Reservasi::with(['tamu', 'kamar'])
-            ->where('status', 'diterima')
-            ->get();
+        return Inertia::render('admin/checkin/form');
+    }
 
-        return Inertia::render('admin/checkin/form', [
-            'reservasi' => $reservasi,
-        ]);
+    public function searchReservasi(Request $request): JsonResponse
+    {
+        $query = Reservasi::with(['tamu', 'kamar'])->where('status', 'diterima');
+
+        if ($search = $request->get('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('idbooking', 'like', "%{$search}%")
+                    ->orWhereHas('tamu', fn ($t) => $t->where('nama', 'like', "%{$search}%"))
+                    ->orWhereHas('kamar', fn ($k) => $k->where('nama', 'like', "%{$search}%"));
+            });
+        }
+
+        return response()->json(
+            $query->orderBy('created_at', 'desc')->paginate($request->get('per_page', 10))
+        );
     }
 
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
             'idbooking' => 'required|exists:reservasi,idbooking',
-            'sisabayar' => 'required|numeric|min:0',
             'deposit' => 'required|numeric|min:0',
         ]);
 

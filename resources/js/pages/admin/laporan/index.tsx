@@ -175,13 +175,12 @@ return <EmptyRow colSpan={7} />;
                 const rows = data as {
                     idcheckin: string;
                     idbooking: string;
-                    sisabayar: number;
                     deposit: number;
                     reservasi: { tamu: { nama: string } | null; kamar: { nama: string } | null } | null;
                 }[];
 
                 if (!rows.length) {
-return <EmptyRow colSpan={6} />;
+return <EmptyRow colSpan={5} />;
 }
 
                 return (
@@ -192,7 +191,6 @@ return <EmptyRow colSpan={6} />;
                                 <th className="px-4 py-3 text-left font-medium">Booking</th>
                                 <th className="px-4 py-3 text-left font-medium">Tamu</th>
                                 <th className="px-4 py-3 text-left font-medium">Kamar</th>
-                                <th className="px-4 py-3 text-right font-medium">Sisa Bayar</th>
                                 <th className="px-4 py-3 text-right font-medium">Deposit</th>
                             </tr>
                         </thead>
@@ -203,7 +201,6 @@ return <EmptyRow colSpan={6} />;
                                     <td className="px-4 py-3 font-mono text-xs">{r.idbooking}</td>
                                     <td className="px-4 py-3">{r.reservasi?.tamu?.nama ?? '-'}</td>
                                     <td className="px-4 py-3">{r.reservasi?.kamar?.nama ?? '-'}</td>
-                                    <td className="px-4 py-3 text-right">{formatRupiah(r.sisabayar)}</td>
                                     <td className="px-4 py-3 text-right">{formatRupiah(r.deposit)}</td>
                                 </tr>
                             ))}

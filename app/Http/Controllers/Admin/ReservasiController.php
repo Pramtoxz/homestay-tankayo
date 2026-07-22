@@ -166,6 +166,34 @@ class ReservasiController extends Controller
         return $pdf->stream("Faktur-{$reservasi->idbooking}.pdf");
     }
 
+    public function approve(Reservasi $reservasi): RedirectResponse
+    {
+        if (! $reservasi->online || $reservasi->status !== 'diproses') {
+            return back()->withErrors(['status' => 'Reservasi ini tidak bisa disetujui.']);
+        }
+
+        if (! $reservasi->buktibayar) {
+            return back()->withErrors(['buktibayar' => 'Tamu belum upload bukti bayar.']);
+        }
+
+        $reservasi->update(['status' => 'diterima']);
+
+        return redirect()->route('admin.reservasi.show', $reservasi->idbooking)
+            ->with('toast', ['type' => 'success', 'message' => 'Reservasi berhasil disetujui.']);
+    }
+
+    public function reject(Reservasi $reservasi): RedirectResponse
+    {
+        if (! $reservasi->online || $reservasi->status !== 'diproses') {
+            return back()->withErrors(['status' => 'Reservasi ini tidak bisa ditolak.']);
+        }
+
+        $reservasi->update(['status' => 'ditolak']);
+
+        return redirect()->route('admin.reservasi.show', $reservasi->idbooking)
+            ->with('toast', ['type' => 'success', 'message' => 'Reservasi ditolak.']);
+    }
+
     public function edit(Reservasi $reservasi): Response
     {
         $reservasi->load(['tamu', 'kamar']);

@@ -15,7 +15,6 @@ type CheckoutDetail = {
     keterangan: string | null;
     checkin: {
         idcheckin: string;
-        sisabayar: number;
         deposit: number;
         reservasi: {
             idbooking: string;
@@ -50,9 +49,9 @@ export default function CheckoutShow({ checkout }: Props) {
                         </Button>
                         <h1 className="text-2xl font-bold">Invoice Check-out</h1>
                     </div>
-                    <Button variant="outline" onClick={() => window.print()}>
+                    <Button variant="outline" onClick={() => window.open(`/admin/checkout/${checkout.idcheckout}/faktur`, '_blank')}>
                         <Printer className="h-4 w-4" />
-                        Cetak
+                        Cetak Faktur
                     </Button>
                 </div>
 
@@ -115,10 +114,6 @@ export default function CheckoutShow({ checkout }: Props) {
                             <div className="flex justify-between">
                                 <span className="text-muted-foreground">Total Bayar</span>
                                 <span>{formatRupiah(r?.totalbayar ?? 0)}</span>
-                            </div>
-                            <div className="flex justify-between">
-                                <span className="text-muted-foreground">Sisa Bayar</span>
-                                <span>{formatRupiah(checkout.checkin?.sisabayar ?? 0)}</span>
                             </div>
                             <div className="flex justify-between">
                                 <span className="text-muted-foreground">Deposit</span>

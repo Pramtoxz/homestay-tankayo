@@ -187,8 +187,7 @@ export default function PaymentUpload({ reservasi }: Props) {
 
 PaymentUpload.layout = {
     breadcrumbs: [
-        { title: 'Dashboard', href: '/portal' },
-        { title: 'Riwayat Booking', href: '/portal/booking/history' },
+        { title: 'Reservasi', href: '/portal' },
         { title: 'Detail', href: '#' },
         { title: 'Upload Bukti Bayar', href: '#' },
     ],

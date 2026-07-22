@@ -133,7 +133,7 @@ export default function LengkapiData({ tamu }: Props) {
 
 LengkapiData.layout = {
     breadcrumbs: [
-        { title: 'Dashboard', href: '/portal' },
+        { title: 'Reservasi', href: '/portal' },
         { title: 'Lengkapi Data', href: '/portal/lengkapi-data' },
     ],
 };

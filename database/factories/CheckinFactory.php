@@ -19,7 +19,6 @@ class CheckinFactory extends Factory
         return [
             'idcheckin' => IdGenerator::checkin(),
             'idbooking' => Reservasi::factory(),
-            'sisabayar' => fake()->randomElement([0, 0, 50000, 100000]),
             'deposit' => fake()->randomElement([50000, 100000, 150000]),
         ];
     }

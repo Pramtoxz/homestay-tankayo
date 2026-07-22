@@ -7,10 +7,14 @@ use App\Models\Checkin;
 use App\Models\Checkout;
 use App\Models\Kamar;
 use App\Services\IdGenerator;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 class CheckoutController extends Controller
 {
@@ -43,29 +47,48 @@ class CheckoutController extends Controller
 
     public function create(): Response
     {
-        $checkin = Checkin::with(['reservasi.tamu', 'reservasi.kamar'])
-            ->whereDoesntHave('checkout')
-            ->whereHas('reservasi', fn ($q) => $q->where('status', 'checkin'))
-            ->get();
+        return Inertia::render('admin/checkout/form');
+    }
 
-        return Inertia::render('admin/checkout/form', [
-            'checkin' => $checkin,
-        ]);
+    public function searchCheckin(Request $request): JsonResponse
+    {
+        $query = Checkin::with(['reservasi.tamu', 'reservasi.kamar'])
+            ->whereDoesntHave('checkout')
+            ->whereHas('reservasi', fn ($q) => $q->where('status', 'checkin'));
+
+        if ($search = $request->get('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('idcheckin', 'like', "%{$search}%")
+                    ->orWhere('idbooking', 'like', "%{$search}%")
+                    ->orWhereHas('reservasi.tamu', fn ($t) => $t->where('nama', 'like', "%{$search}%"))
+                    ->orWhereHas('reservasi.kamar', fn ($k) => $k->where('nama', 'like', "%{$search}%"));
+            });
+        }
+
+        return response()->json(
+            $query->orderBy('created_at', 'desc')->paginate($request->get('per_page', 10))
+        );
     }
 
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
             'idcheckin' => 'required|exists:checkin,idcheckin',
+            'tglcheckout' => 'required|date',
             'potongan' => 'required|numeric|min:0',
             'keterangan' => 'nullable|string',
         ]);
 
         $checkin = Checkin::with('reservasi')->findOrFail((string) $validated['idcheckin']);
+
+        if ($validated['tglcheckout'] < Carbon::parse($checkin->reservasi->tglcheckin)->format('Y-m-d')) {
+            return back()->withErrors(['tglcheckout' => 'Tanggal check-out tidak boleh sebelum tanggal check-in.']);
+        }
+
         $grandtotal = $checkin->reservasi->totalbayar - $validated['potongan'];
 
-        $validated['idcheckout'] = IdGenerator::checkout();
-        $validated['tglcheckout'] = now()->toDateString();
+        $idcheckout = IdGenerator::checkout();
+        $validated['idcheckout'] = $idcheckout;
         $validated['grandtotal'] = max($grandtotal, 0);
 
         Checkout::create($validated);
@@ -75,7 +98,8 @@ class CheckoutController extends Controller
             ->update(['status_kamar' => 'tersedia']);
 
         return redirect()->route('admin.checkout.index')
-            ->with('toast', ['type' => 'success', 'message' => 'Check-out berhasil.']);
+            ->with('toast', ['type' => 'success', 'message' => 'Check-out berhasil.'])
+            ->with('faktur_url', route('admin.checkout.faktur', $idcheckout));
     }
 
     public function show(Checkout $checkout): Response
@@ -85,5 +109,22 @@ class CheckoutController extends Controller
         return Inertia::render('admin/checkout/show', [
             'checkout' => $checkout,
         ]);
+    }
+
+    public function faktur(Checkout $checkout): HttpResponse
+    {
+        $checkout->load(['checkin.reservasi.tamu', 'checkin.reservasi.kamar']);
+
+        Carbon::setLocale('id');
+
+        $pdf = Pdf::loadView('pdf.faktur-checkout', [
+            'checkout' => $checkout,
+            'reservasi' => $checkout->checkin->reservasi,
+            'logoPath' => public_path('assets/images/tankayo.png'),
+            'tglCheckout' => Carbon::parse($checkout->tglcheckout)->translatedFormat('d F Y'),
+            'tglCetak' => Carbon::now()->translatedFormat('d F Y H:i'),
+        ])->setPaper('a4', 'portrait');
+
+        return $pdf->stream("Faktur-Checkout-{$checkout->idcheckout}.pdf");
     }
 }

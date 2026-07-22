@@ -9,7 +9,6 @@ import { formatTanggal, formatWaktu } from '@/lib/utils';
 type CheckinDetail = {
     idcheckin: string;
     idbooking: string;
-    sisabayar: number;
     deposit: number;
     created_at: string;
     reservasi: {
@@ -128,10 +127,6 @@ export default function CheckinShow({ checkin }: Props) {
                             <div className="flex justify-between">
                                 <span className="text-muted-foreground">Total Bayar</span>
                                 <span>{formatRupiah(r?.totalbayar ?? 0)}</span>
-                            </div>
-                            <div className="flex justify-between">
-                                <span className="text-muted-foreground">Sisa Bayar</span>
-                                <span>{formatRupiah(checkin.sisabayar)}</span>
                             </div>
                             <div className="flex justify-between">
                                 <span className="text-muted-foreground">Deposit</span>

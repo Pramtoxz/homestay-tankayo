@@ -1,44 +1,49 @@
 import { Head, router, usePage } from '@inertiajs/react';
 import { ArrowLeft, Save } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { SearchPickerDialog } from '@/components/search-picker-dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { formatTanggal } from '@/lib/utils';
 
 type CheckinOption = {
     idcheckin: string;
-    sisabayar: number;
     deposit: number;
     reservasi: {
         idbooking: string;
+        tglcheckin: string;
         totalbayar: number;
         tamu: { nama: string } | null;
-        kamar: { nama: string } | null;
+        kamar: { id_kamar: string; nama: string; tipe_kamar: string; harga: number } | null;
     } | null;
-};
-
-type Props = {
-    checkin: CheckinOption[];
 };
 
 const formatRupiah = (n: number) =>
     new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
 
-export default function CheckoutForm({ checkin }: Props) {
+export default function CheckoutForm() {
     const { errors } = usePage().props as { errors: Record<string, string> };
 
     const [values, setValues] = useState({
         idcheckin: '',
+        tglcheckout: '',
         potongan: '',
         keterangan: '',
     });
 
-    const selectedCheckin = checkin.find((c) => c.idcheckin === values.idcheckin);
+    const [selectedCheckin, setSelectedCheckin] = useState<CheckinOption | null>(null);
+    const [checkinDialogOpen, setCheckinDialogOpen] = useState(false);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         setValues((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    };
+
+    const handleSelectCheckin = (c: CheckinOption) => {
+        setSelectedCheckin(c);
+        setValues((prev) => ({ ...prev, idcheckin: c.idcheckin }));
     };
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -46,10 +51,13 @@ export default function CheckoutForm({ checkin }: Props) {
         router.post('/admin/checkout', values);
     };
 
-    const grandTotal =
-        selectedCheckin && values.potongan
-            ? Math.max((selectedCheckin.reservasi?.totalbayar ?? 0) - Number(values.potongan), 0)
-            : selectedCheckin?.reservasi?.totalbayar ?? 0;
+    const minTglCheckout = selectedCheckin?.reservasi?.tglcheckin ?? undefined;
+
+    const grandTotal = useMemo(() => {
+        const totalbayar = selectedCheckin?.reservasi?.totalbayar ?? 0;
+
+        return values.potongan ? Math.max(totalbayar - Number(values.potongan), 0) : totalbayar;
+    }, [selectedCheckin, values.potongan]);
 
     return (
         <>
@@ -65,48 +73,122 @@ export default function CheckoutForm({ checkin }: Props) {
                         </div>
                     </CardHeader>
                     <CardContent>
-                        <form onSubmit={handleSubmit} className="max-w-2xl space-y-4">
+                        <form onSubmit={handleSubmit} className="mx-auto max-w-2xl space-y-4">
                             <div className="space-y-2">
                                 <Label>Check-in</Label>
-                                <Select
-                                    value={values.idcheckin}
-                                    onValueChange={(v) => setValues((p) => ({ ...p, idcheckin: v }))}
-                                >
-                                    <SelectTrigger className="w-full">
-                                        <SelectValue placeholder="Pilih check-in..." />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {checkin.map((c) => (
-                                            <SelectItem key={c.idcheckin} value={c.idcheckin}>
-                                                {c.idcheckin} - {c.reservasi?.tamu?.nama ?? '-'} (
-                                                {c.reservasi?.kamar?.nama ?? '-'})
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="ci_idcheckin">ID Check-in</Label>
+                                        <Input
+                                            id="ci_idcheckin"
+                                            readOnly
+                                            placeholder="Belum dipilih"
+                                            value={selectedCheckin?.idcheckin ?? ''}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="ci_tamu">Nama Tamu</Label>
+                                        <div className="flex items-center gap-2">
+                                            <Input
+                                                id="ci_tamu"
+                                                readOnly
+                                                placeholder="Belum dipilih"
+                                                value={selectedCheckin?.reservasi?.tamu?.nama ?? ''}
+                                                className="flex-1"
+                                            />
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => setCheckinDialogOpen(true)}
+                                            >
+                                                Pilih Check-in
+                                            </Button>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="ci_kode_kamar">Kode Kamar</Label>
+                                        <Input
+                                            id="ci_kode_kamar"
+                                            readOnly
+                                            placeholder="Belum dipilih"
+                                            value={selectedCheckin?.reservasi?.kamar?.id_kamar ?? ''}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="ci_tipe_kamar">Tipe Kamar</Label>
+                                        <Input
+                                            id="ci_tipe_kamar"
+                                            readOnly
+                                            placeholder="Belum dipilih"
+                                            value={selectedCheckin?.reservasi?.kamar?.tipe_kamar ?? ''}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="ci_harga_kamar">Harga Kamar</Label>
+                                        <Input
+                                            id="ci_harga_kamar"
+                                            readOnly
+                                            placeholder="Belum dipilih"
+                                            value={
+                                                selectedCheckin?.reservasi?.kamar
+                                                    ? `${formatRupiah(selectedCheckin.reservasi.kamar.harga)}/malam`
+                                                    : ''
+                                            }
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="ci_checkin">Tanggal Check-in</Label>
+                                        <Input
+                                            id="ci_checkin"
+                                            readOnly
+                                            placeholder="Belum dipilih"
+                                            value={
+                                                selectedCheckin?.reservasi
+                                                    ? formatTanggal(selectedCheckin.reservasi.tglcheckin)
+                                                    : ''
+                                            }
+                                        />
+                                    </div>
+                                    <div className="col-span-2 space-y-2">
+                                        <Label htmlFor="ci_total">Total Bayar Reservasi</Label>
+                                        <Input
+                                            id="ci_total"
+                                            readOnly
+                                            placeholder="Belum dipilih"
+                                            value={
+                                                selectedCheckin?.reservasi
+                                                    ? formatRupiah(selectedCheckin.reservasi.totalbayar)
+                                                    : ''
+                                            }
+                                        />
+                                    </div>
+                                </div>
                                 {errors.idcheckin && <p className="text-sm text-destructive">{errors.idcheckin}</p>}
                             </div>
 
-                            {selectedCheckin && (
-                                <div className="rounded-md bg-muted p-4 text-sm space-y-1">
-                                    <p>
-                                        <span className="text-muted-foreground">Tamu:</span>{' '}
-                                        {selectedCheckin.reservasi?.tamu?.nama ?? '-'}
-                                    </p>
-                                    <p>
-                                        <span className="text-muted-foreground">Kamar:</span>{' '}
-                                        {selectedCheckin.reservasi?.kamar?.nama ?? '-'}
-                                    </p>
-                                    <p>
-                                        <span className="text-muted-foreground">Total Bayar:</span>{' '}
-                                        {formatRupiah(selectedCheckin.reservasi?.totalbayar ?? 0)}
-                                    </p>
-                                    <p>
-                                        <span className="text-muted-foreground">Deposit:</span>{' '}
-                                        {formatRupiah(selectedCheckin.deposit)}
-                                    </p>
-                                </div>
-                            )}
+                            <div className="space-y-2">
+                                <Label htmlFor="tglcheckout">Tanggal Check-out</Label>
+                                <Input
+                                    id="tglcheckout"
+                                    name="tglcheckout"
+                                    type="date"
+                                    min={minTglCheckout}
+                                    value={values.tglcheckout}
+                                    onChange={handleChange}
+                                />
+                                {errors.tglcheckout && <p className="text-sm text-destructive">{errors.tglcheckout}</p>}
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="deposit">Deposit</Label>
+                                <Input
+                                    id="deposit"
+                                    readOnly
+                                    placeholder="Belum dipilih"
+                                    value={selectedCheckin ? formatRupiah(selectedCheckin.deposit) : ''}
+                                />
+                            </div>
 
                             <div className="space-y-2">
                                 <Label htmlFor="potongan">Potongan</Label>
@@ -123,7 +205,7 @@ export default function CheckoutForm({ checkin }: Props) {
 
                             <div className="space-y-2">
                                 <Label htmlFor="keterangan">Keterangan</Label>
-                                <Input
+                                <Textarea
                                     id="keterangan"
                                     name="keterangan"
                                     value={values.keterangan}
@@ -135,7 +217,7 @@ export default function CheckoutForm({ checkin }: Props) {
 
                             {selectedCheckin && (
                                 <div className="rounded-md bg-primary/10 p-4 text-sm">
-                                    <div className="flex justify-between font-semibold text-base">
+                                    <div className="flex justify-between text-base font-semibold">
                                         <span>Grand Total</span>
                                         <span>{formatRupiah(grandTotal)}</span>
                                     </div>
@@ -155,6 +237,19 @@ export default function CheckoutForm({ checkin }: Props) {
                     </CardContent>
                 </Card>
             </div>
+
+            <SearchPickerDialog<CheckinOption>
+                open={checkinDialogOpen}
+                onOpenChange={setCheckinDialogOpen}
+                title="Pilih Check-in"
+                searchPlaceholder="Cari ID check-in, booking, tamu, atau kamar..."
+                fetchUrl="/admin/checkout-search/checkin"
+                columns={['ID Check-in', 'Booking', 'Tamu', 'Kamar']}
+                getRowKey={(c) => c.idcheckin}
+                renderRow={(c) => [c.idcheckin, c.reservasi?.idbooking ?? '-', c.reservasi?.tamu?.nama ?? '-', c.reservasi?.kamar?.nama ?? '-']}
+                onSelect={handleSelectCheckin}
+                emptyMessage="Tidak ada tamu yang siap check-out."
+            />
         </>
     );
 }

@@ -31,13 +31,4 @@ class BookingService
                 'status' => 'limit',
             ]);
     }
-
-    public static function hitungTotal(float $harga, string $tglcheckin, string $tglcheckout): float
-    {
-        $start = Carbon::parse($tglcheckin);
-        $end = Carbon::parse($tglcheckout);
-        $days = $start->diffInDays($end);
-
-        return max($days, 1) * $harga;
-    }
 }

@@ -1,42 +1,43 @@
 import { Head, router, usePage } from '@inertiajs/react';
 import { ArrowLeft, Save } from 'lucide-react';
 import { useState } from 'react';
+import { SearchPickerDialog } from '@/components/search-picker-dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { formatTanggal } from '@/lib/utils';
 
 type ReservasiOption = {
     idbooking: string;
-    tamu: { nama: string } | null;
-    kamar: { nama: string; harga: number } | null;
     tglcheckin: string;
     tglcheckout: string;
     totalbayar: number;
-};
-
-type Props = {
-    reservasi: ReservasiOption[];
+    tamu: { nama: string } | null;
+    kamar: { id_kamar: string; nama: string } | null;
 };
 
 const formatRupiah = (n: number) =>
     new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
 
-export default function CheckinForm({ reservasi }: Props) {
+export default function CheckinForm() {
     const { errors } = usePage().props as { errors: Record<string, string> };
 
     const [values, setValues] = useState({
         idbooking: '',
-        sisabayar: '',
         deposit: '',
     });
 
-    const selectedReservasi = reservasi.find((r) => r.idbooking === values.idbooking);
+    const [selectedReservasi, setSelectedReservasi] = useState<ReservasiOption | null>(null);
+    const [reservasiDialogOpen, setReservasiDialogOpen] = useState(false);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setValues((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    };
+
+    const handleSelectReservasi = (r: ReservasiOption) => {
+        setSelectedReservasi(r);
+        setValues((prev) => ({ ...prev, idbooking: r.idbooking }));
     };
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -58,48 +59,88 @@ export default function CheckinForm({ reservasi }: Props) {
                         </div>
                     </CardHeader>
                     <CardContent>
-                        <form onSubmit={handleSubmit} className="max-w-2xl space-y-4">
+                        <form onSubmit={handleSubmit} className="mx-auto max-w-2xl space-y-4">
                             <div className="space-y-2">
-                                <Label>Reservasi</Label>
-                                <Select
-                                    value={values.idbooking}
-                                    onValueChange={(v) => setValues((p) => ({ ...p, idbooking: v }))}
-                                >
-                                    <SelectTrigger className="w-full">
-                                        <SelectValue placeholder="Pilih reservasi..." />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {reservasi.map((r) => (
-                                            <SelectItem key={r.idbooking} value={r.idbooking}>
-                                                {r.idbooking} - {r.tamu?.nama ?? '-'} ({r.kamar?.nama ?? '-'})
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                {errors.idbooking && <p className="text-sm text-destructive">{errors.idbooking}</p>}
-                            </div>
-
-                            {selectedReservasi && (
-                                <div className="rounded-md bg-muted p-4 text-sm space-y-1">
-                                    <p><span className="text-muted-foreground">Tamu:</span> {selectedReservasi.tamu?.nama ?? '-'}</p>
-                                    <p><span className="text-muted-foreground">Kamar:</span> {selectedReservasi.kamar?.nama ?? '-'}</p>
-                                    <p><span className="text-muted-foreground">Check-in:</span> {formatTanggal(selectedReservasi.tglcheckin)}</p>
-                                    <p><span className="text-muted-foreground">Check-out:</span> {formatTanggal(selectedReservasi.tglcheckout)}</p>
-                                    <p><span className="text-muted-foreground">Total:</span> {formatRupiah(selectedReservasi.totalbayar)}</p>
+                                <div className="flex items-center justify-between">
+                                    <Label>Reservasi</Label>
                                 </div>
-                            )}
-
-                            <div className="space-y-2">
-                                <Label htmlFor="sisabayar">Sisa Bayar</Label>
-                                <Input
-                                    id="sisabayar"
-                                    name="sisabayar"
-                                    type="number"
-                                    value={values.sisabayar}
-                                    onChange={handleChange}
-                                    placeholder="0"
-                                />
-                                {errors.sisabayar && <p className="text-sm text-destructive">{errors.sisabayar}</p>}
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="res_idbooking">ID Booking</Label>
+                                        <Input
+                                            id="res_idbooking"
+                                            readOnly
+                                            placeholder="Belum dipilih"
+                                            value={selectedReservasi?.idbooking ?? ''}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="res_tamu">Nama Tamu</Label>
+                                        <div className="flex items-center gap-2">
+                                            <Input
+                                                id="res_tamu"
+                                                readOnly
+                                                placeholder="Belum dipilih"
+                                                value={selectedReservasi?.tamu?.nama ?? ''}
+                                                className="flex-1"
+                                            />
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => setReservasiDialogOpen(true)}
+                                            >
+                                                Pilih Reservasi
+                                            </Button>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="res_kode_kamar">Kode Kamar</Label>
+                                        <Input
+                                            id="res_kode_kamar"
+                                            readOnly
+                                            placeholder="Belum dipilih"
+                                            value={selectedReservasi?.kamar?.id_kamar ?? ''}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="res_nama_kamar">Nama Kamar</Label>
+                                        <Input
+                                            id="res_nama_kamar"
+                                            readOnly
+                                            placeholder="Belum dipilih"
+                                            value={selectedReservasi?.kamar?.nama ?? ''}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="res_checkin">Tanggal Check-in</Label>
+                                        <Input
+                                            id="res_checkin"
+                                            readOnly
+                                            placeholder="Belum dipilih"
+                                            value={selectedReservasi ? formatTanggal(selectedReservasi.tglcheckin) : ''}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="res_checkout">Tanggal Check-out</Label>
+                                        <Input
+                                            id="res_checkout"
+                                            readOnly
+                                            placeholder="Belum dipilih"
+                                            value={selectedReservasi ? formatTanggal(selectedReservasi.tglcheckout) : ''}
+                                        />
+                                    </div>
+                                    <div className="col-span-2 space-y-2">
+                                        <Label htmlFor="res_total">Total Bayar Reservasi</Label>
+                                        <Input
+                                            id="res_total"
+                                            readOnly
+                                            placeholder="Belum dipilih"
+                                            value={selectedReservasi ? formatRupiah(selectedReservasi.totalbayar) : ''}
+                                        />
+                                    </div>
+                                </div>
+                                {errors.idbooking && <p className="text-sm text-destructive">{errors.idbooking}</p>}
                             </div>
 
                             <div className="space-y-2">
@@ -128,6 +169,25 @@ export default function CheckinForm({ reservasi }: Props) {
                     </CardContent>
                 </Card>
             </div>
+
+            <SearchPickerDialog<ReservasiOption>
+                open={reservasiDialogOpen}
+                onOpenChange={setReservasiDialogOpen}
+                title="Pilih Reservasi"
+                searchPlaceholder="Cari ID booking, nama tamu, atau kamar..."
+                fetchUrl="/admin/checkin-search/reservasi"
+                columns={['ID Booking', 'Tamu', 'Kamar', 'Check-in', 'Check-out']}
+                getRowKey={(r) => r.idbooking}
+                renderRow={(r) => [
+                    r.idbooking,
+                    r.tamu?.nama ?? '-',
+                    r.kamar?.nama ?? '-',
+                    formatTanggal(r.tglcheckin),
+                    formatTanggal(r.tglcheckout),
+                ]}
+                onSelect={handleSelectReservasi}
+                emptyMessage="Tidak ada reservasi yang siap check-in."
+            />
         </>
     );
 }

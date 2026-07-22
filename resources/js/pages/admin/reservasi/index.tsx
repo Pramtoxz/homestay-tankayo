@@ -19,6 +19,7 @@ type ReservasiItem = {
     tglcheckout: string;
     totalbayar: number;
     status: string;
+    online: boolean;
 };
 
 type Props = {
@@ -128,7 +129,12 @@ export default function ReservasiIndex({ reservasi, filters }: Props) {
             accessorKey: 'status',
             header: ({ column }) => <SortableHeader title="Status" column={column} />,
             cell: ({ row }) => (
-                <Badge className={statusColor[row.original.status] ?? ''}>{row.original.status}</Badge>
+                <div className="flex items-center gap-1.5">
+                    <Badge className={statusColor[row.original.status] ?? ''}>{row.original.status}</Badge>
+                    {row.original.online && row.original.status === 'diproses' && (
+                        <Badge variant="destructive">Perlu Verifikasi</Badge>
+                    )}
+                </div>
             ),
         },
         {

@@ -1,5 +1,6 @@
 import { Head, router } from '@inertiajs/react';
-import { ArrowLeft, BedDouble, Calendar, CreditCard, Upload, XCircle, Clock, CheckCircle, XOctagon } from 'lucide-react';
+import { ArrowLeft, BedDouble, Calendar, CreditCard, Upload, XCircle, Clock, CheckCircle, XOctagon, FileText } from 'lucide-react';
+import { useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -75,15 +76,25 @@ export default function BookingDetail({ reservasi }: Props) {
 
     const stepIndex = getStepIndex(reservasi.status);
     const isFailed = ['ditolak', 'cancel', 'limit'].includes(reservasi.status);
-    const canUpload = ['diproses', 'ditolak'].includes(reservasi.status);
-    const canCancel = reservasi.status === 'diproses';
+    const canUpload = reservasi.status === 'ditolak' || (reservasi.status === 'diproses' && !reservasi.buktibayar);
+    const awaitingVerification = reservasi.status === 'diproses' && !!reservasi.buktibayar;
+    const canCancel = reservasi.status === 'diproses' && !reservasi.buktibayar;
+    const justApproved = reservasi.status === 'diterima';
+    const canDownloadFaktur = ['diterima', 'checkin', 'selesai'].includes(reservasi.status);
+    const fakturUrl = `/portal/booking/${reservasi.idbooking}/faktur`;
+
+    useEffect(() => {
+        if (justApproved) {
+            window.open(fakturUrl, '_blank');
+        }
+    }, [justApproved, fakturUrl]);
 
     return (
         <>
             <Head title={`Booking ${reservasi.idbooking}`} />
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
                 <div className="flex items-center gap-4">
-                    <Button variant="outline" size="icon" onClick={() => router.get('/portal/booking/history')}>
+                    <Button variant="outline" size="icon" onClick={() => router.get('/portal')}>
                         <ArrowLeft className="h-4 w-4" />
                     </Button>
                     <h1 className="text-2xl font-bold">Detail Booking</h1>
@@ -128,6 +139,26 @@ export default function BookingDetail({ reservasi }: Props) {
                                         </div>
                                     );
                                 })}
+                            </div>
+                        )}
+
+                        {awaitingVerification && (
+                            <div className="mt-4 flex items-center gap-2 rounded-md bg-yellow-50 p-3 text-sm text-yellow-800">
+                                <Clock className="h-4 w-4" />
+                                <span className="font-medium">Bukti bayar sudah diupload. Menunggu verifikasi admin.</span>
+                            </div>
+                        )}
+
+                        {justApproved && (
+                            <div className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-md bg-green-50 p-3 text-sm text-green-800">
+                                <div className="flex items-center gap-2">
+                                    <CheckCircle className="h-4 w-4" />
+                                    <span className="font-medium">Booking disetujui! Faktur sudah bisa diunduh.</span>
+                                </div>
+                                <Button size="sm" onClick={() => window.open(fakturUrl, '_blank')}>
+                                    <FileText className="h-4 w-4" />
+                                    Cetak Faktur
+                                </Button>
                             </div>
                         )}
                     </CardContent>
@@ -235,6 +266,12 @@ export default function BookingDetail({ reservasi }: Props) {
                             Upload Bukti Bayar
                         </Button>
                     )}
+                    {canDownloadFaktur && !justApproved && (
+                        <Button variant="outline" onClick={() => window.open(fakturUrl, '_blank')}>
+                            <FileText className="h-4 w-4" />
+                            Cetak Faktur
+                        </Button>
+                    )}
                     {canCancel && (
                         <Dialog>
                             <DialogTrigger asChild>
@@ -264,7 +301,7 @@ export default function BookingDetail({ reservasi }: Props) {
                             </DialogContent>
                         </Dialog>
                     )}
-                    <Button variant="outline" onClick={() => router.get('/portal/booking/history')}>
+                    <Button variant="outline" onClick={() => router.get('/portal')}>
                         Kembali
                     </Button>
                 </div>
@@ -275,8 +312,7 @@ export default function BookingDetail({ reservasi }: Props) {
 
 BookingDetail.layout = {
     breadcrumbs: [
-        { title: 'Dashboard', href: '/portal' },
-        { title: 'Riwayat Booking', href: '/portal/booking/history' },
+        { title: 'Reservasi', href: '/portal' },
         { title: 'Detail', href: '#' },
     ],
 };

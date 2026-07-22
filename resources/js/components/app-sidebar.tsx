@@ -7,7 +7,6 @@ import {
     FileText,
     LayoutGrid,
     Users,
-    UserCheck,
     Wallet,
 } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
@@ -68,18 +67,6 @@ const getNavItems = (role: string): { group: string; items: NavItem[] }[] => {
             group: 'Laporan',
             items: [
                 { title: 'Laporan', href: '/laporan', icon: FileText },
-            ],
-        });
-    }
-
-    if (role === 'user') {
-        groups.push({
-            group: 'Portal',
-            items: [
-                { title: 'Dashboard', href: '/portal', icon: LayoutGrid },
-                { title: 'Booking Baru', href: '/portal/booking', icon: CalendarPlus },
-                { title: 'Riwayat Booking', href: '/portal/booking/history', icon: CalendarCheck },
-                { title: 'Lengkapi Data', href: '/portal/lengkapi-data', icon: UserCheck },
             ],
         });
     }

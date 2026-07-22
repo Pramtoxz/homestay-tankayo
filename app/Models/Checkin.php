@@ -25,7 +25,6 @@ class Checkin extends Model
     protected $fillable = [
         'idcheckin',
         'idbooking',
-        'sisabayar',
         'deposit',
     ];
 

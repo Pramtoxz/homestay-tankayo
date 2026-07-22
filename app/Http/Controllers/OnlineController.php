@@ -7,46 +7,44 @@ use App\Models\Reservasi;
 use App\Models\Tamu;
 use App\Services\BookingService;
 use App\Services\IdGenerator;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 class OnlineController extends Controller
 {
+    /** @var array<int, string> */
+    private const TIPE_KAMAR_OPTIONS = [
+        'Superior Room Balcony',
+        'Deluxe Room Balcony',
+        'Twinbed Room Balcony',
+        'Junior Suite Room Balcony',
+        'Triple Room Balcony',
+    ];
+
     public function dashboard(Request $request): Response
     {
         $user = $request->user();
         $tamu = $user->currentTamu;
 
-        $stats = [
-            'total_booking' => 0,
-            'active' => 0,
-            'completed' => 0,
-        ];
-        $recentBookings = collect();
+        if (! $tamu) {
+            return Inertia::render('portal/lengkapi-data', [
+                'tamu' => null,
+            ]);
+        }
 
-        $query = Reservasi::where('user_id', $user->id);
-        $stats['total_booking'] = (clone $query)->count();
-        $stats['active'] = (clone $query)->whereNotIn('status', ['selesai', 'cancel', 'limit'])->count();
-        $stats['completed'] = (clone $query)->where('status', 'selesai')->count();
-        $recentBookings = Reservasi::where('user_id', $user->id)
+        $reservasi = Reservasi::where('user_id', $user->id)
             ->with('kamar')
             ->latest()
-            ->limit(5)
-            ->get();
+            ->paginate(10);
 
-        $availableRooms = Kamar::where('status_kamar', 'tersedia')
-            ->limit(6)
-            ->get();
-
-        return Inertia::render('portal/dashboard', [
-            'stats' => $stats,
-            'recentBookings' => $recentBookings,
-            'availableRooms' => $availableRooms,
-            'hasTamu' => $tamu !== null,
+        return Inertia::render('portal/history', [
+            'reservasi' => $reservasi,
         ]);
     }
 
@@ -88,49 +86,59 @@ class OnlineController extends Controller
             ]);
         }
 
-        $kamar = Kamar::where('status_kamar', 'tersedia')->get();
-
         return Inertia::render('portal/booking', [
-            'kamar' => $kamar,
             'tamu' => $tamu,
         ]);
     }
 
-    public function checkAvailability(Request $request): JsonResponse
+    public function tipeSummary(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'idkamar' => 'required|exists:kamar,id_kamar',
             'tglcheckin' => 'required|date',
             'tglcheckout' => 'required|date|after:tglcheckin',
         ]);
 
-        $available = BookingService::checkAvailability(
-            $validated['idkamar'],
-            $validated['tglcheckin'],
-            $validated['tglcheckout']
-        );
+        $summary = collect(self::TIPE_KAMAR_OPTIONS)->map(function (string $tipe) use ($validated) {
+            $query = Kamar::where('tipe_kamar', $tipe)->where('status_kamar', 'tersedia');
 
-        $kamar = Kamar::find((string) $validated['idkamar']);
-        $total = 0;
-        $harga = 0;
+            $total = (clone $query)->count();
 
-        if ($kamar) {
-            $harga = $kamar->harga;
+            $tersedia = (clone $query)->whereDoesntHave('reservasi', function ($r) use ($validated) {
+                $r->whereNotIn('status', ['ditolak', 'cancel', 'selesai', 'limit'])
+                    ->where('tglcheckin', '<', $validated['tglcheckout'])
+                    ->where('tglcheckout', '>', $validated['tglcheckin']);
+            })->count();
 
-            if ($available) {
-                $total = BookingService::hitungTotal(
-                    $kamar->harga,
-                    $validated['tglcheckin'],
-                    $validated['tglcheckout']
-                );
-            }
-        }
+            return [
+                'tipe_kamar' => $tipe,
+                'total' => $total,
+                'tersedia' => $tersedia,
+                'harga_mulai' => (clone $query)->orderBy('harga')->value('harga'),
+            ];
+        });
 
-        return response()->json([
-            'available' => $available,
-            'total' => $total,
-            'harga' => $harga,
+        return response()->json($summary->values());
+    }
+
+    public function kamarByTipe(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'tglcheckin' => 'required|date',
+            'tglcheckout' => 'required|date|after:tglcheckin',
+            'tipe_kamar' => ['required', 'in:'.implode(',', self::TIPE_KAMAR_OPTIONS)],
         ]);
+
+        $kamar = Kamar::where('tipe_kamar', $validated['tipe_kamar'])
+            ->where('status_kamar', 'tersedia')
+            ->whereDoesntHave('reservasi', function ($r) use ($validated) {
+                $r->whereNotIn('status', ['ditolak', 'cancel', 'selesai', 'limit'])
+                    ->where('tglcheckin', '<', $validated['tglcheckout'])
+                    ->where('tglcheckout', '>', $validated['tglcheckin']);
+            })
+            ->orderBy('nama')
+            ->get();
+
+        return response()->json($kamar);
     }
 
     public function saveBooking(Request $request): RedirectResponse
@@ -147,7 +155,7 @@ class OnlineController extends Controller
             'tglcheckin' => 'required|date|after_or_equal:today',
             'tglcheckout' => 'required|date|after:tglcheckin',
             'totalbayar' => 'required|numeric|min:1',
-            'tipe' => 'required|in:transfer,dp',
+            'tipe' => 'required|in:transfer',
         ]);
 
         if (! BookingService::checkAvailability($validated['idkamar'], $validated['tglcheckin'], $validated['tglcheckout'])) {
@@ -167,18 +175,6 @@ class OnlineController extends Controller
             ->with('toast', ['type' => 'success', 'message' => 'Booking berhasil dibuat. Silakan upload bukti bayar dalam 15 menit.']);
     }
 
-    public function bookingHistory(Request $request): Response
-    {
-        $reservasi = Reservasi::where('user_id', $request->user()->id)
-            ->with('kamar')
-            ->latest()
-            ->paginate(10);
-
-        return Inertia::render('portal/history', [
-            'reservasi' => $reservasi,
-        ]);
-    }
-
     public function bookingDetail(Request $request, Reservasi $reservasi): Response
     {
         if ($reservasi->user_id !== $request->user()->id) {
@@ -192,13 +188,50 @@ class OnlineController extends Controller
         ]);
     }
 
+    public function faktur(Request $request, Reservasi $reservasi): HttpResponse
+    {
+        if ($reservasi->user_id !== $request->user()->id) {
+            abort(403);
+        }
+
+        if (! in_array($reservasi->status, ['diterima', 'checkin', 'selesai'])) {
+            abort(403);
+        }
+
+        $reservasi->load(['tamu', 'kamar']);
+
+        Carbon::setLocale('id');
+
+        $tglCheckin = Carbon::parse($reservasi->tglcheckin);
+        $tglCheckout = Carbon::parse($reservasi->tglcheckout);
+        $lamaInap = max($tglCheckin->diffInDays($tglCheckout), 1);
+
+        $pdf = Pdf::loadView('pdf.faktur-reservasi', [
+            'reservasi' => $reservasi,
+            'lamaInap' => $lamaInap,
+            'logoPath' => public_path('assets/images/tankayo.png'),
+            'tglBooking' => Carbon::parse($reservasi->created_at)->translatedFormat('d F Y'),
+            'tglCheckin' => $tglCheckin->translatedFormat('d F Y'),
+            'tglCheckout' => $tglCheckout->translatedFormat('d F Y'),
+            'tglCetak' => Carbon::now()->translatedFormat('d F Y H:i'),
+        ])->setPaper('a4', 'portrait');
+
+        return $pdf->stream("Faktur-{$reservasi->idbooking}.pdf");
+    }
+
+    private function canUploadPayment(Reservasi $reservasi): bool
+    {
+        return $reservasi->status === 'ditolak'
+            || ($reservasi->status === 'diproses' && ! $reservasi->buktibayar);
+    }
+
     public function paymentUpload(Request $request, Reservasi $reservasi): Response|RedirectResponse
     {
         if ($reservasi->user_id !== $request->user()->id) {
             abort(403);
         }
 
-        if (! in_array($reservasi->status, ['diproses', 'ditolak'])) {
+        if (! $this->canUploadPayment($reservasi)) {
             return redirect()->route('portal.booking.detail', $reservasi->idbooking);
         }
 
@@ -215,7 +248,7 @@ class OnlineController extends Controller
             abort(403);
         }
 
-        if (! in_array($reservasi->status, ['diproses', 'ditolak'])) {
+        if (! $this->canUploadPayment($reservasi)) {
             return redirect()->route('portal.booking.detail', $reservasi->idbooking);
         }
 
@@ -225,7 +258,7 @@ class OnlineController extends Controller
 
         $file = $request->file('bukti_bayar');
         $filename = $reservasi->idbooking.'.'.$file->getClientOriginalExtension();
-        $file->storeAs('public/bukti-bayar', $filename);
+        $file->storeAs('bukti-bayar', $filename, 'public');
 
         $reservasi->update([
             'buktibayar' => 'bukti-bayar/'.$filename,
@@ -242,7 +275,7 @@ class OnlineController extends Controller
             abort(403);
         }
 
-        if ($reservasi->status !== 'diproses') {
+        if ($reservasi->status !== 'diproses' || $reservasi->buktibayar) {
             return back()->withErrors(['status' => 'Booking tidak dapat dibatalkan.']);
         }
 

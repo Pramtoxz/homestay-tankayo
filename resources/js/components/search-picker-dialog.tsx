@@ -82,6 +82,15 @@ export function SearchPickerDialog<T>({
                 const response = await fetch(`${fetchUrl}?${params.toString()}`, {
                     headers: { Accept: 'application/json' },
                 });
+
+                if (!response.ok) {
+                    setData([]);
+                    setLastPage(1);
+                    setTotal(0);
+
+                    return;
+                }
+
                 const json: PaginatedResponse<T> = await response.json();
 
                 setData(json.data);

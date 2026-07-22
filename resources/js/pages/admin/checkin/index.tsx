@@ -11,7 +11,6 @@ import { Input } from '@/components/ui/input';
 type CheckinItem = {
     idcheckin: string;
     idbooking: string;
-    sisabayar: number;
     deposit: number;
     reservasi: {
         idbooking: string;
@@ -78,11 +77,6 @@ export default function CheckinIndex({ checkin, filters }: Props) {
             id: 'kamar',
             header: () => <span>Kamar</span>,
             cell: ({ row }) => row.original.reservasi?.kamar?.nama ?? '-',
-        },
-        {
-            accessorKey: 'sisabayar',
-            header: ({ column }) => <SortableHeader title="Sisa Bayar" column={column} className="justify-end" />,
-            cell: ({ row }) => <div className="text-right">{formatRupiah(row.original.sisabayar)}</div>,
         },
         {
             accessorKey: 'deposit',

@@ -1,9 +1,8 @@
 <!DOCTYPE html>
 <html lang="id">
-
 <head>
     <meta charset="utf-8">
-    <title>Faktur Reservasi {{ $reservasi->idbooking }}</title>
+    <title>Faktur Check-out {{ $checkout->idcheckout }}</title>
     <style>
         @page {
             margin: 34px 40px;
@@ -126,6 +125,10 @@
             border-bottom: 1px solid #e5e7eb;
         }
 
+        table.items-table tbody tr.deduction td {
+            color: #b91c1c;
+        }
+
         table.items-table tfoot td {
             padding: 8px 8px;
             font-size: 12px;
@@ -133,21 +136,21 @@
             border-top: 2px solid #111827;
         }
 
-        /* Payment */
-        table.payment-table {
-            width: 45%;
-            margin-top: 4px;
-            margin-bottom: 30px;
+        /* Keterangan */
+        .note-box {
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+            padding: 8px 10px;
+            margin-bottom: 16px;
+            font-size: 10px;
         }
 
-        table.payment-table td {
-            padding: 2px 0;
-            font-size: 11px;
-        }
-
-        table.payment-table .kv-label {
-            width: 100px;
-            color: #374151;
+        .note-label {
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 9px;
+            color: #6b7280;
+            margin-bottom: 2px;
         }
 
         /* Signature */
@@ -184,7 +187,6 @@
         }
     </style>
 </head>
-
 <body>
     <table class="doc-header" style="width: 100%;">
         <tr>
@@ -196,9 +198,9 @@
                 <div class="company-tagline">Penginapan Syariah &bull; Ramah Keluarga</div>
             </td>
             <td class="doc-title-cell">
-                <div class="doc-title">FAKTUR RESERVASI</div>
-                <div class="doc-meta">No. {{ $reservasi->idbooking }}</div>
-                <div class="doc-meta">Tanggal: {{ $tglBooking }}</div>
+                <div class="doc-title">FAKTUR CHECK-OUT</div>
+                <div class="doc-meta">No. {{ $checkout->idcheckout }}</div>
+                <div class="doc-meta">Tanggal: {{ $tglCheckout }}</div>
             </td>
         </tr>
     </table>
@@ -220,19 +222,15 @@
                 </table>
             </td>
             <td class="section-col">
-                <div class="section-title">Detail Menginap</div>
+                <div class="section-title">Detail Kamar</div>
                 <table class="kv-table">
                     <tr>
-                        <td class="kv-label">Check-in</td>
-                        <td>: {{ $tglCheckin }}</td>
+                        <td class="kv-label">Kode Kamar</td>
+                        <td>: {{ $reservasi->kamar->id_kamar ?? '-' }}</td>
                     </tr>
                     <tr>
-                        <td class="kv-label">Check-out</td>
-                        <td>: {{ $tglCheckout }}</td>
-                    </tr>
-                    <tr>
-                        <td class="kv-label">Lama Inap</td>
-                        <td>: {{ $lamaInap }} malam</td>
+                        <td class="kv-label">Tipe Kamar</td>
+                        <td>: {{ $reservasi->kamar->tipe_kamar ?? '-' }}</td>
                     </tr>
                 </table>
             </td>
@@ -242,37 +240,38 @@
     <table class="items-table">
         <thead>
             <tr>
-                <th style="width: 15%;">Kode Kamar</th>
-                <th style="width: 30%;">Tipe Kamar</th>
-                <th style="width: 20%; text-align: right;">Harga / Malam</th>
-                <th style="width: 15%; text-align: center;">Lama Inap</th>
-                <th style="width: 20%; text-align: right;">Subtotal</th>
+                <th style="width: 70%;">Keterangan Bayar</th>
+                <th style="width: 30%; text-align: right;">Jumlah</th>
             </tr>
         </thead>
         <tbody>
             <tr>
-                <td>{{ $reservasi->kamar->id_kamar ?? '-' }}</td>
-                <td>{{ $reservasi->kamar->nama ?? '-' }}</td>
-                <td style="text-align: right;">Rp {{ number_format($reservasi->kamar->harga ?? 0, 0, ',', '.') }}</td>
-                <td style="text-align: center;">{{ $lamaInap }} malam</td>
-                <td style="text-align: right;">Rp
-                    {{ number_format(($reservasi->kamar->harga ?? 0) * $lamaInap, 0, ',', '.') }}</td>
+                <td>Total Bayar Reservasi</td>
+                <td style="text-align: right;">Rp {{ number_format($reservasi->totalbayar ?? 0, 0, ',', '.') }}</td>
+            </tr>
+            <tr>
+                <td>Deposit</td>
+                <td style="text-align: right;">Rp {{ number_format($checkout->checkin->deposit ?? 0, 0, ',', '.') }}</td>
+            </tr>
+            <tr class="deduction">
+                <td>Potongan</td>
+                <td style="text-align: right;">- Rp {{ number_format($checkout->potongan, 0, ',', '.') }}</td>
             </tr>
         </tbody>
         <tfoot>
             <tr>
-                <td colspan="4" style="text-align: right;">TOTAL</td>
-                <td style="text-align: right;">Rp {{ number_format($reservasi->totalbayar, 0, ',', '.') }}</td>
+                <td style="text-align: right;">GRAND TOTAL</td>
+                <td style="text-align: right;">Rp {{ number_format($checkout->grandtotal, 0, ',', '.') }}</td>
             </tr>
         </tfoot>
     </table>
 
-    <table class="payment-table">
-        <tr>
-            <td class="kv-label">Tipe Pembayaran</td>
-            <td>: {{ ucfirst($reservasi->tipe ?? '-') }}</td>
-        </tr>
-    </table>
+    @if ($checkout->keterangan)
+        <div class="note-box">
+            <div class="note-label">Keterangan</div>
+            <div>{{ $checkout->keterangan }}</div>
+        </div>
+    @endif
 
     <table class="signature-table">
         <tr>
@@ -289,5 +288,4 @@
         Faktur ini dicetak otomatis oleh sistem pada {{ $tglCetak }} dan sah tanpa tanda tangan basah.
     </div>
 </body>
-
 </html>

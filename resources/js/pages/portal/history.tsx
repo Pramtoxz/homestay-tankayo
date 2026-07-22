@@ -47,14 +47,14 @@ const statusColor: Record<string, string> = {
 export default function BookingHistory({ reservasi }: Props) {
     return (
         <>
-            <Head title="Riwayat Booking" />
+            <Head title="Reservasi" />
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
                 <Card>
                     <CardHeader>
                         <div className="flex items-center justify-between">
                             <CardTitle className="flex items-center gap-2">
                                 <History className="h-5 w-5" />
-                                Riwayat Booking
+                                Reservasi
                             </CardTitle>
                             <Button onClick={() => router.get('/portal/booking')}>
                                 Booking Baru
@@ -142,8 +142,5 @@ export default function BookingHistory({ reservasi }: Props) {
 }
 
 BookingHistory.layout = {
-    breadcrumbs: [
-        { title: 'Dashboard', href: '/portal' },
-        { title: 'Riwayat Booking', href: '/portal/booking/history' },
-    ],
+    breadcrumbs: [{ title: 'Reservasi', href: '/portal' }],
 };

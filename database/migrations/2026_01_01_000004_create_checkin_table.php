@@ -11,7 +11,6 @@ return new class extends Migration
         Schema::create('checkin', function (Blueprint $table) {
             $table->char('idcheckin', 30)->primary();
             $table->string('idbooking', 30);
-            $table->double('sisabayar')->default(0);
             $table->double('deposit')->default(0);
             $table->timestamps();
 

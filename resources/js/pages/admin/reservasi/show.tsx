@@ -1,8 +1,18 @@
 import { Head, router } from '@inertiajs/react';
-import { ArrowLeft, User, BedDouble, Calendar, CreditCard } from 'lucide-react';
+import { ArrowLeft, User, BedDouble, Calendar, CreditCard, Check, X, ImageOff } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 import { formatTanggal } from '@/lib/utils';
 
@@ -15,11 +25,12 @@ type ReservasiDetail = {
     totalbayar: number;
     tipe: string;
     status: string;
+    online: boolean;
+    buktibayar: string | null;
     tamu: { nik: string; nama: string; alamat: string; nohp: string; jk: string } | null;
     kamar: { id_kamar: string; nama: string; harga: number; fasilitas: string | null } | null;
     checkin: {
         idcheckin: string;
-        sisabayar: number;
         deposit: number;
         checkout: {
             idcheckout: string;
@@ -48,6 +59,16 @@ const statusColor: Record<string, string> = {
 };
 
 export default function ReservasiShow({ reservasi }: Props) {
+    const canReview = reservasi.online && reservasi.status === 'diproses';
+
+    const handleApprove = () => {
+        router.post(`/admin/reservasi/${reservasi.idbooking}/approve`);
+    };
+
+    const handleReject = () => {
+        router.post(`/admin/reservasi/${reservasi.idbooking}/reject`);
+    };
+
     const days =
         Math.max(
             Math.ceil(
@@ -67,6 +88,62 @@ export default function ReservasiShow({ reservasi }: Props) {
                     </Button>
                     <h1 className="text-2xl font-bold">Detail Reservasi</h1>
                     <Badge className={statusColor[reservasi.status] ?? ''}>{reservasi.status}</Badge>
+
+                    {canReview && (
+                        <div className="ml-auto flex gap-2">
+                            <Dialog>
+                                <DialogTrigger asChild>
+                                    <Button
+                                        size="sm"
+                                        disabled={!reservasi.buktibayar}
+                                        title={!reservasi.buktibayar ? 'Tamu belum upload bukti bayar' : undefined}
+                                    >
+                                        <Check className="h-4 w-4" />
+                                        Setujui
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent>
+                                    <DialogHeader>
+                                        <DialogTitle>Setujui Reservasi?</DialogTitle>
+                                        <DialogDescription>
+                                            Reservasi {reservasi.idbooking} akan disetujui. Tamu akan bisa mengunduh faktur.
+                                        </DialogDescription>
+                                    </DialogHeader>
+                                    <DialogFooter>
+                                        <DialogClose asChild>
+                                            <Button variant="outline">Batal</Button>
+                                        </DialogClose>
+                                        <Button onClick={handleApprove}>Ya, Setujui</Button>
+                                    </DialogFooter>
+                                </DialogContent>
+                            </Dialog>
+
+                            <Dialog>
+                                <DialogTrigger asChild>
+                                    <Button variant="destructive" size="sm">
+                                        <X className="h-4 w-4" />
+                                        Tolak
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent>
+                                    <DialogHeader>
+                                        <DialogTitle>Tolak Reservasi?</DialogTitle>
+                                        <DialogDescription>
+                                            Reservasi {reservasi.idbooking} akan ditolak. Tamu bisa upload ulang bukti bayar.
+                                        </DialogDescription>
+                                    </DialogHeader>
+                                    <DialogFooter>
+                                        <DialogClose asChild>
+                                            <Button variant="outline">Batal</Button>
+                                        </DialogClose>
+                                        <Button variant="destructive" onClick={handleReject}>
+                                            Ya, Tolak
+                                        </Button>
+                                    </DialogFooter>
+                                </DialogContent>
+                            </Dialog>
+                        </div>
+                    )}
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-2">
@@ -163,8 +240,42 @@ export default function ReservasiShow({ reservasi }: Props) {
                                 <span className="text-muted-foreground">Tipe</span>
                                 <Badge variant="outline">{reservasi.tipe}</Badge>
                             </div>
+                            {reservasi.online && (
+                                <div className="flex justify-between">
+                                    <span className="text-muted-foreground">Sumber</span>
+                                    <Badge variant="outline">Booking Online</Badge>
+                                </div>
+                            )}
                         </CardContent>
                     </Card>
+
+                    {reservasi.online && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="text-base">Bukti Bayar</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                {reservasi.buktibayar ? (
+                                    <a
+                                        href={`/storage/${reservasi.buktibayar}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                    >
+                                        <img
+                                            src={`/storage/${reservasi.buktibayar}`}
+                                            alt="Bukti bayar"
+                                            className="max-h-64 w-full rounded-md border object-contain"
+                                        />
+                                    </a>
+                                ) : (
+                                    <div className="flex h-32 flex-col items-center justify-center gap-2 rounded-md border border-dashed text-sm text-muted-foreground">
+                                        <ImageOff className="h-6 w-6" />
+                                        Tamu belum upload bukti bayar
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+                    )}
                 </div>
 
                 {reservasi.checkin && (
@@ -173,14 +284,10 @@ export default function ReservasiShow({ reservasi }: Props) {
                             <CardTitle className="text-base">Informasi Check-in</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="grid gap-4 md:grid-cols-3 text-sm">
+                            <div className="grid gap-4 md:grid-cols-2 text-sm">
                                 <div>
                                     <p className="text-muted-foreground">ID Check-in</p>
                                     <p className="font-mono font-medium">{reservasi.checkin.idcheckin}</p>
-                                </div>
-                                <div>
-                                    <p className="text-muted-foreground">Sisa Bayar</p>
-                                    <p className="font-medium">{formatRupiah(reservasi.checkin.sisabayar)}</p>
                                 </div>
                                 <div>
                                     <p className="text-muted-foreground">Deposit</p>

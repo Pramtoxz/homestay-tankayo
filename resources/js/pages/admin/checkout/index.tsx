@@ -1,7 +1,7 @@
 import { Head, router } from '@inertiajs/react';
 import type {ColumnDef} from '@tanstack/react-table';
-import { Plus, Eye } from 'lucide-react';
-import { useCallback, useMemo } from 'react';
+import { Plus, Eye, Printer } from 'lucide-react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { DataTable, SortableHeader  } from '@/components/data-table';
 import type {PaginationMeta} from '@/components/data-table';
 import { Button } from '@/components/ui/button';
@@ -63,6 +63,20 @@ export default function CheckoutIndex({ checkout, filters }: Props) {
         router.get('/admin/checkout', { ...filters, sort_by: sortBy, sort_order: sortOrder, page: 1 }, { preserveState: true });
     }, [filters]);
 
+    const handleCetakFaktur = useCallback((id: string) => {
+        window.open(`/admin/checkout/${id}/faktur`, '_blank');
+    }, []);
+
+    useEffect(() => {
+        return router.on('flash', (event) => {
+            const fakturUrl = (event as CustomEvent).detail?.flash?.faktur_url as string | undefined;
+
+            if (fakturUrl) {
+                window.open(fakturUrl, '_blank');
+            }
+        });
+    }, []);
+
     const columns: ColumnDef<CheckoutItem>[] = useMemo(() => [
         {
             accessorKey: 'idcheckout',
@@ -98,14 +112,17 @@ export default function CheckoutIndex({ checkout, filters }: Props) {
             id: 'aksi',
             header: () => <div className="text-right">Aksi</div>,
             cell: ({ row }) => (
-                <div className="flex justify-end">
+                <div className="flex justify-end gap-2">
                     <Button variant="outline" size="sm" onClick={() => router.get(`/admin/checkout/${row.original.idcheckout}`)}>
                         <Eye className="h-3 w-3" />
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => handleCetakFaktur(row.original.idcheckout)}>
+                        <Printer className="h-3 w-3" />
                     </Button>
                 </div>
             ),
         },
-    ], []);
+    ], [handleCetakFaktur]);
 
     const sorting = useMemo(() => {
         const sortBy = filters.sort_by ?? 'created_at';
