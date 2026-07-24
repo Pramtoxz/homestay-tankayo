@@ -121,6 +121,24 @@ export default function PaymentUpload({ reservasi }: Props) {
                                 <Badge variant="outline">{reservasi.tipe}</Badge>
                             </div>
                         </div>
+                         <div className="mb-4 space-y-2 rounded-md bg-muted p-3 text-sm">
+                            <div className="flex justify-between">
+                                <span className="text-muted-foreground">Silahkan Transfer Ke Salah Satu Bank Berikut</span>
+                                <span className="font-mono"></span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="text-muted-foreground"></span>
+                                <span></span>
+                            </div>
+                              <div className="flex justify-between">
+                                <Badge variant="outline">Bank Nagari</Badge>
+                                <span className='font-semibold'>7100.14.345644-8</span>
+                            </div>
+                            <div className="flex justify-between">
+                                 <Badge variant="outline">BRI</Badge>
+                                <span className="font-semibold">034101000523508</span>
+                            </div>
+                        </div>
 
                         {reservasi.batas_waktu && reservasi.status === 'diproses' && (
                             <div className={`mb-4 flex items-center gap-2 rounded-md p-3 text-sm ${
