@@ -49,7 +49,7 @@ class CheckinController extends Controller
 
     public function searchReservasi(Request $request): JsonResponse
     {
-        $query = Reservasi::with(['tamu', 'kamar'])->where('status', 'diterima');
+        $query = Reservasi::with(['tamu', 'kamar.tipe'])->where('status', 'diterima');
 
         if ($search = $request->get('search')) {
             $query->where(function ($q) use ($search) {

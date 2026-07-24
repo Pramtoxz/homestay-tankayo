@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Kamar;
+use App\Models\Rekening;
 use App\Models\Reservasi;
 use App\Models\Tamu;
+use App\Models\Tipe;
 use App\Services\BookingService;
 use App\Services\IdGenerator;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -52,7 +54,9 @@ class ReservasiController extends Controller
 
     public function create(): Response
     {
-        return Inertia::render('admin/reservasi/form');
+        return Inertia::render('admin/reservasi/form', [
+            'tipeOptions' => Tipe::where('aktif', true)->orderBy('nama_tipe')->get(['id', 'nama_tipe']),
+        ]);
     }
 
     public function searchTamu(Request $request): JsonResponse
@@ -74,7 +78,7 @@ class ReservasiController extends Controller
 
     public function searchKamar(Request $request): JsonResponse
     {
-        $query = Kamar::where('status_kamar', 'tersedia');
+        $query = Kamar::with('tipe:id,nama_tipe')->where('status_kamar', 'tersedia');
 
         if ($search = $request->get('search')) {
             $query->where(function ($q) use ($search) {
@@ -91,8 +95,8 @@ class ReservasiController extends Controller
             });
         }
 
-        if ($tipeKamar = $request->get('tipe_kamar')) {
-            $query->where('tipe_kamar', $tipeKamar);
+        if ($tipeId = $request->get('tipe_id')) {
+            $query->where('tipe_id', $tipeId);
         }
 
         return response()->json(
@@ -136,10 +140,13 @@ class ReservasiController extends Controller
 
     public function show(Reservasi $reservasi): Response
     {
-        $reservasi->load(['tamu', 'kamar', 'checkin.checkout']);
+        $reservasi->load(['tamu', 'kamar.tipe', 'checkin.checkout']);
+
+        $rekening = Rekening::where('aktif', true)->orderBy('jenis')->orderBy('nama')->get();
 
         return Inertia::render('admin/reservasi/show', [
             'reservasi' => $reservasi,
+            'rekening' => $rekening,
         ]);
     }
 
@@ -200,6 +207,7 @@ class ReservasiController extends Controller
 
         return Inertia::render('admin/reservasi/form', [
             'reservasi' => $reservasi,
+            'tipeOptions' => Tipe::where('aktif', true)->orderBy('nama_tipe')->get(['id', 'nama_tipe']),
         ]);
     }
 

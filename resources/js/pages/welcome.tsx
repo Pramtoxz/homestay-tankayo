@@ -7,15 +7,15 @@ import { Hero } from './welcome/hero';
 import { Navbar } from './welcome/navbar';
 import { Rooms } from './welcome/rooms';
 import { Stats } from './welcome/stats';
-import type { Room } from './welcome/types';
+import type { TipeWithRooms } from './welcome/types';
 
 type PageProps = {
     auth: Auth;
-    rooms: Room[];
+    tipes: TipeWithRooms[];
 };
 
 export default function Welcome() {
-    const { auth, rooms } = usePage<PageProps>().props;
+    const { auth, tipes } = usePage<PageProps>().props;
     const user = auth.user ?? null;
 
     return (
@@ -30,7 +30,7 @@ export default function Welcome() {
             <Navbar user={user} />
             <Hero user={user} />
             <Features />
-            <Rooms rooms={rooms} user={user} />
+            <Rooms tipes={tipes} user={user} />
             <Stats />
             <Cta user={user} />
             <Footer />

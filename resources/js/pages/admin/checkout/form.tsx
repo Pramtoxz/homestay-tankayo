@@ -2,6 +2,7 @@ import { Head, router, usePage } from '@inertiajs/react';
 import { ArrowLeft, Save } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { SearchPickerDialog } from '@/components/search-picker-dialog';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -17,7 +18,7 @@ type CheckinOption = {
         tglcheckin: string;
         totalbayar: number;
         tamu: { nama: string } | null;
-        kamar: { id_kamar: string; nama: string; tipe_kamar: string; harga: number } | null;
+        kamar: { id_kamar: string; nama: string; tipe: { id: number; nama_tipe: string } | null; harga: number } | null;
     } | null;
 };
 
@@ -31,6 +32,7 @@ export default function CheckoutForm() {
         idcheckin: '',
         tglcheckout: '',
         potongan: '',
+        totalbayar: '',
         keterangan: '',
     });
 
@@ -43,21 +45,51 @@ export default function CheckoutForm() {
 
     const handleSelectCheckin = (c: CheckinOption) => {
         setSelectedCheckin(c);
-        setValues((prev) => ({ ...prev, idcheckin: c.idcheckin }));
-    };
-
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        router.post('/admin/checkout', values);
+        setValues((prev) => ({
+            ...prev,
+            idcheckin: c.idcheckin,
+            totalbayar: '',
+            potongan: '',
+        }));
     };
 
     const minTglCheckout = selectedCheckin?.reservasi?.tglcheckin ?? undefined;
 
-    const grandTotal = useMemo(() => {
-        const totalbayar = selectedCheckin?.reservasi?.totalbayar ?? 0;
+    const totalbayarReservasi = selectedCheckin?.reservasi?.totalbayar ?? 0;
+    const deposit = selectedCheckin?.deposit ?? 0;
+    const potongan = Number(values.potongan) || 0;
 
-        return values.potongan ? Math.max(totalbayar - Number(values.potongan), 0) : totalbayar;
-    }, [selectedCheckin, values.potongan]);
+    const grandTotal = useMemo(() => {
+        return Math.max(totalbayarReservasi - potongan, 0);
+    }, [totalbayarReservasi, potongan]);
+
+    const kekurangan = useMemo(() => {
+        if (potongan <= 0 || potongan <= deposit) {
+            return 0;
+        }
+
+        return potongan - deposit;
+    }, [potongan, deposit]);
+
+    const totalbayarCheckout = useMemo(() => {
+        if (!selectedCheckin) {
+            return 0;
+        }
+
+        if (values.totalbayar !== '') {
+            return Number(values.totalbayar) || 0;
+        }
+
+        return kekurangan;
+    }, [selectedCheckin, values.totalbayar, kekurangan]);
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        router.post('/admin/checkout', {
+            ...values,
+            totalbayar: totalbayarCheckout.toString(),
+        });
+    };
 
     return (
         <>
@@ -121,7 +153,7 @@ export default function CheckoutForm() {
                                             id="ci_tipe_kamar"
                                             readOnly
                                             placeholder="Belum dipilih"
-                                            value={selectedCheckin?.reservasi?.kamar?.tipe_kamar ?? ''}
+                                            value={selectedCheckin?.reservasi?.kamar?.tipe?.nama_tipe ?? ''}
                                         />
                                     </div>
                                     <div className="space-y-2">
@@ -203,6 +235,32 @@ export default function CheckoutForm() {
                                 {errors.potongan && <p className="text-sm text-destructive">{errors.potongan}</p>}
                             </div>
 
+                            {selectedCheckin && kekurangan > 0 && (
+                                <div className="rounded-md bg-orange-50 p-3 text-sm text-orange-800">
+                                    <div className="flex justify-between">
+                                        <span>Potongan melebihi deposit</span>
+                                        <Badge variant="outline" className="text-orange-800">Kekurangan</Badge>
+                                    </div>
+                                    <div className="mt-1 flex justify-between font-semibold">
+                                        <span>Tamu harus membayar kekurangan</span>
+                                        <span>{formatRupiah(kekurangan)}</span>
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="space-y-2">
+                                <Label htmlFor="totalbayar">Total Bayar Tambahan</Label>
+                                <Input
+                                    id="totalbayar"
+                                    name="totalbayar"
+                                    type="number"
+                                    value={values.totalbayar !== '' ? values.totalbayar : (selectedCheckin ? kekurangan.toString() : '')}
+                                    onChange={handleChange}
+                                    placeholder="0"
+                                />
+                                {errors.totalbayar && <p className="text-sm text-destructive">{errors.totalbayar}</p>}
+                            </div>
+
                             <div className="space-y-2">
                                 <Label htmlFor="keterangan">Keterangan</Label>
                                 <Textarea
@@ -216,10 +274,32 @@ export default function CheckoutForm() {
                             </div>
 
                             {selectedCheckin && (
-                                <div className="rounded-md bg-primary/10 p-4 text-sm">
-                                    <div className="flex justify-between text-base font-semibold">
+                                <div className="rounded-md bg-primary/10 p-4 text-sm space-y-1">
+                                    <div className="flex justify-between">
+                                        <span>Total Reservasi</span>
+                                        <span>{formatRupiah(totalbayarReservasi)}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span>Potongan</span>
+                                        <span className="text-destructive">- {formatRupiah(potongan)}</span>
+                                    </div>
+                                    <div className="flex justify-between border-t pt-1">
                                         <span>Grand Total</span>
                                         <span>{formatRupiah(grandTotal)}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span>Deposit</span>
+                                        <span>{formatRupiah(deposit)}</span>
+                                    </div>
+                                    {kekurangan > 0 && (
+                                        <div className="flex justify-between text-orange-700 font-semibold">
+                                            <span>Kekurangan</span>
+                                            <span>{formatRupiah(kekurangan)}</span>
+                                        </div>
+                                    )}
+                                    <div className="flex justify-between border-t pt-1 text-base font-semibold">
+                                        <span>Total Bayar</span>
+                                        <span>{formatRupiah(totalbayarCheckout)}</span>
                                     </div>
                                 </div>
                             )}

@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Kamar;
+use App\Models\Rekening;
 use App\Models\Reservasi;
 use App\Models\Tamu;
+use App\Models\Tipe;
 use App\Services\BookingService;
 use App\Services\IdGenerator;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -18,15 +20,6 @@ use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 class OnlineController extends Controller
 {
-    /** @var array<int, string> */
-    private const TIPE_KAMAR_OPTIONS = [
-        'Superior Room Balcony',
-        'Deluxe Room Balcony',
-        'Twinbed Room Balcony',
-        'Junior Suite Room Balcony',
-        'Triple Room Balcony',
-    ];
-
     public function dashboard(Request $request): Response
     {
         $user = $request->user();
@@ -98,8 +91,10 @@ class OnlineController extends Controller
             'tglcheckout' => 'required|date|after:tglcheckin',
         ]);
 
-        $summary = collect(self::TIPE_KAMAR_OPTIONS)->map(function (string $tipe) use ($validated) {
-            $query = Kamar::where('tipe_kamar', $tipe)->where('status_kamar', 'tersedia');
+        $tipes = Tipe::where('aktif', true)->orderBy('nama_tipe')->get();
+
+        $summary = $tipes->map(function (Tipe $tipe) use ($validated) {
+            $query = Kamar::where('tipe_id', $tipe->id)->where('status_kamar', 'tersedia');
 
             $total = (clone $query)->count();
 
@@ -110,7 +105,9 @@ class OnlineController extends Controller
             })->count();
 
             return [
-                'tipe_kamar' => $tipe,
+                'tipe_id' => $tipe->id,
+                'nama_tipe' => $tipe->nama_tipe,
+                'foto' => $tipe->foto,
                 'total' => $total,
                 'tersedia' => $tersedia,
                 'harga_mulai' => (clone $query)->orderBy('harga')->value('harga'),
@@ -125,10 +122,10 @@ class OnlineController extends Controller
         $validated = $request->validate([
             'tglcheckin' => 'required|date',
             'tglcheckout' => 'required|date|after:tglcheckin',
-            'tipe_kamar' => ['required', 'in:'.implode(',', self::TIPE_KAMAR_OPTIONS)],
+            'tipe_id' => 'required|exists:tipe,id',
         ]);
 
-        $kamar = Kamar::where('tipe_kamar', $validated['tipe_kamar'])
+        $kamar = Kamar::where('tipe_id', $validated['tipe_id'])
             ->where('status_kamar', 'tersedia')
             ->whereDoesntHave('reservasi', function ($r) use ($validated) {
                 $r->whereNotIn('status', ['ditolak', 'cancel', 'selesai', 'limit'])
@@ -237,8 +234,11 @@ class OnlineController extends Controller
 
         $reservasi->load('kamar');
 
+        $rekening = Rekening::where('aktif', true)->orderBy('jenis')->orderBy('nama')->get();
+
         return Inertia::render('portal/payment', [
             'reservasi' => $reservasi,
+            'rekening' => $rekening,
         ]);
     }
 
@@ -254,6 +254,7 @@ class OnlineController extends Controller
 
         $request->validate([
             'bukti_bayar' => 'required|image|mimes:jpg,jpeg,png|max:2048',
+            'rekening_id' => 'required|exists:rekening,id',
         ]);
 
         $file = $request->file('bukti_bayar');
@@ -262,6 +263,7 @@ class OnlineController extends Controller
 
         $reservasi->update([
             'buktibayar' => 'bukti-bayar/'.$filename,
+            'rekening_id' => $request->input('rekening_id'),
             'status' => 'diproses',
         ]);
 

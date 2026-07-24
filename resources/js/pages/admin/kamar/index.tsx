@@ -1,23 +1,28 @@
 import { Head, router } from '@inertiajs/react';
-import type {ColumnDef} from '@tanstack/react-table';
+import type { ColumnDef } from '@tanstack/react-table';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { useCallback, useMemo } from 'react';
-import { DataTable, SortableHeader  } from '@/components/data-table';
-import type {PaginationMeta} from '@/components/data-table';
+import { DataTable, SortableHeader } from '@/components/data-table';
+import type { PaginationMeta } from '@/components/data-table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
+type TipeInfo = {
+    id: number;
+    nama_tipe: string;
+};
+
 type KamarItem = {
     id_kamar: string;
     nama: string;
-    tipe_kamar: string;
+    tipe_id: number;
+    tipe: TipeInfo | null;
     harga: number;
     fasilitas: string | null;
     status_kamar: string;
-    cover: string | null;
 };
 
 type Props = {
@@ -81,9 +86,9 @@ export default function KamarIndex({ kamar, filters }: Props) {
             cell: ({ row }) => <span className="font-medium">{row.original.nama}</span>,
         },
         {
-            accessorKey: 'tipe_kamar',
+            accessorKey: 'tipe.nama_tipe',
             header: ({ column }) => <SortableHeader title="Tipe Kamar" column={column} />,
-            cell: ({ row }) => <span className="text-muted-foreground">{row.original.tipe_kamar}</span>,
+            cell: ({ row }) => <span className="text-muted-foreground">{row.original.tipe?.nama_tipe ?? '-'}</span>,
         },
         {
             accessorKey: 'harga',

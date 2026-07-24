@@ -1,5 +1,5 @@
 import { Head, router, usePage } from '@inertiajs/react';
-import { ArrowLeft, Save, Upload } from 'lucide-react';
+import { ArrowLeft, Save } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,47 +7,39 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
+type TipeOption = {
+    id: number;
+    nama_tipe: string;
+};
+
 type KamarData = {
     id_kamar: string;
     nama: string;
-    tipe_kamar: string;
+    tipe_id: number;
     harga: number;
     fasilitas: string | null;
     deskripsi: string | null;
-    cover: string | null;
     status_kamar: string;
 };
-
-const TIPE_KAMAR_OPTIONS = [
-    'Superior Room Balcony',
-    'Deluxe Room Balcony',
-    'Twinbed Room Balcony',
-    'Junior Suite Room Balcony',
-    'Triple Room Balcony',
-];
 
 type Props = {
     kamar?: KamarData;
     nextId?: string;
+    tipeOptions: TipeOption[];
 };
 
-export default function KamarForm({ kamar, nextId }: Props) {
+export default function KamarForm({ kamar, nextId, tipeOptions }: Props) {
     const isEdit = !!kamar;
     const { errors } = usePage().props as { errors: Record<string, string> };
 
     const [values, setValues] = useState({
         nama: kamar?.nama ?? '',
-        tipe_kamar: kamar?.tipe_kamar ?? TIPE_KAMAR_OPTIONS[0],
+        tipe_id: kamar?.tipe_id?.toString() ?? (tipeOptions.length > 0 ? tipeOptions[0].id.toString() : ''),
         harga: kamar?.harga?.toString() ?? '',
         fasilitas: kamar?.fasilitas ?? '',
         deskripsi: kamar?.deskripsi ?? '',
         status_kamar: kamar?.status_kamar ?? 'tersedia',
     });
-
-    const [coverFile, setCoverFile] = useState<File | null>(null);
-    const [coverPreview, setCoverPreview] = useState<string | null>(
-        kamar?.cover ? `/storage/${kamar.cover}` : null,
-    );
 
     const handleChange = (
         e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -55,34 +47,22 @@ export default function KamarForm({ kamar, nextId }: Props) {
         setValues((prev) => ({ ...prev, [e.target.name]: e.target.value }));
     };
 
-    const handleCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-
-        if (file) {
-            setCoverFile(file);
-            setCoverPreview(URL.createObjectURL(file));
-        }
-    };
-
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        const formData = new FormData();
-        formData.append('nama', values.nama);
-        formData.append('tipe_kamar', values.tipe_kamar);
-        formData.append('harga', values.harga);
-        formData.append('fasilitas', values.fasilitas);
-        formData.append('deskripsi', values.deskripsi);
-        formData.append('status_kamar', values.status_kamar);
-
-        if (coverFile) {
-            formData.append('cover', coverFile);
-        }
+        const data: Record<string, string> = {
+            nama: values.nama,
+            tipe_id: values.tipe_id,
+            harga: values.harga,
+            fasilitas: values.fasilitas,
+            deskripsi: values.deskripsi,
+            status_kamar: values.status_kamar,
+        };
 
         if (isEdit) {
-            formData.append('_method', 'PUT');
-            router.post(`/admin/kamar/${kamar.id_kamar}`, formData);
+            data._method = 'PUT';
+            router.post(`/admin/kamar/${kamar.id_kamar}`, data);
         } else {
-            router.post('/admin/kamar', formData);
+            router.post('/admin/kamar', data);
         }
     };
 
@@ -119,21 +99,21 @@ export default function KamarForm({ kamar, nextId }: Props) {
                             <div className="space-y-2">
                                 <Label>Tipe Kamar</Label>
                                 <Select
-                                    value={values.tipe_kamar}
-                                    onValueChange={(v) => setValues((p) => ({ ...p, tipe_kamar: v }))}
+                                    value={values.tipe_id}
+                                    onValueChange={(v) => setValues((p) => ({ ...p, tipe_id: v }))}
                                 >
                                     <SelectTrigger className="w-full">
-                                        <SelectValue />
+                                        <SelectValue placeholder="Pilih tipe kamar" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {TIPE_KAMAR_OPTIONS.map((tipe) => (
-                                            <SelectItem key={tipe} value={tipe}>
-                                                {tipe}
+                                        {tipeOptions.map((tipe) => (
+                                            <SelectItem key={tipe.id} value={tipe.id.toString()}>
+                                                {tipe.nama_tipe}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
-                                {errors.tipe_kamar && <p className="text-sm text-destructive">{errors.tipe_kamar}</p>}
+                                {errors.tipe_id && <p className="text-sm text-destructive">{errors.tipe_id}</p>}
                             </div>
 
                             <div className="space-y-2">
@@ -171,30 +151,6 @@ export default function KamarForm({ kamar, nextId }: Props) {
                                     placeholder="Deskripsi kamar"
                                 />
                                 {errors.deskripsi && <p className="text-sm text-destructive">{errors.deskripsi}</p>}
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label>Cover</Label>
-                                <div className="flex items-center gap-4">
-                                    {coverPreview && (
-                                        <img
-                                            src={coverPreview}
-                                            alt="Preview"
-                                            className="h-20 w-20 rounded-md object-cover"
-                                        />
-                                    )}
-                                    <label className="flex cursor-pointer items-center gap-2 rounded-md border px-4 py-2 text-sm hover:bg-muted">
-                                        <Upload className="h-4 w-4" />
-                                        Pilih File
-                                        <input
-                                            type="file"
-                                            accept="image/jpeg,image/png"
-                                            className="hidden"
-                                            onChange={handleCoverChange}
-                                        />
-                                    </label>
-                                </div>
-                                {errors.cover && <p className="text-sm text-destructive">{errors.cover}</p>}
                             </div>
 
                             <div className="space-y-2">

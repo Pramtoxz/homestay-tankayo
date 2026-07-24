@@ -42,8 +42,17 @@ type ReservasiDetail = {
     } | null;
 };
 
+type RekeningItem = {
+    id: number;
+    jenis: string;
+    nama: string;
+    nomor: string | null;
+    foto: string | null;
+};
+
 type Props = {
     reservasi: ReservasiDetail;
+    rekening: RekeningItem[];
 };
 
 const formatRupiah = (n: number) =>
@@ -58,7 +67,7 @@ const statusColor: Record<string, string> = {
     cancel: 'bg-red-100 text-red-800',
 };
 
-export default function ReservasiShow({ reservasi }: Props) {
+export default function ReservasiShow({ reservasi, rekening }: Props) {
     const canReview = reservasi.online && reservasi.status === 'diproses';
 
     const handleApprove = () => {
@@ -273,6 +282,30 @@ export default function ReservasiShow({ reservasi }: Props) {
                                         Tamu belum upload bukti bayar
                                     </div>
                                 )}
+                            </CardContent>
+                        </Card>
+                    )}
+
+                    {rekening.length > 0 && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="text-base">Info Rekening (Tampilan Tamu)</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="space-y-2 text-sm">
+                                    {rekening.map((r) => (
+                                        <div key={r.id} className="flex items-center justify-between rounded-md border p-2">
+                                            <div className="flex items-center gap-2">
+                                                {r.foto && (
+                                                    <img src={`/storage/${r.foto}`} alt={r.nama} className="h-8 w-8 rounded object-cover" />
+                                                )}
+                                                <Badge variant="outline">{r.nama}</Badge>
+                                                <span className="text-xs text-muted-foreground capitalize">{r.jenis}</span>
+                                            </div>
+                                            {r.nomor && <span className="font-mono text-sm">{r.nomor}</span>}
+                                        </div>
+                                    ))}
+                                </div>
                             </CardContent>
                         </Card>
                     )}

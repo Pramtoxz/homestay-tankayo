@@ -11,6 +11,7 @@ use App\Models\Tamu;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
@@ -29,7 +30,7 @@ class LaporanController extends Controller
 
     public function kamar(): Response
     {
-        $data = Kamar::select('id_kamar', 'tipe_kamar', 'harga', 'status_kamar')->get();
+        $data = Kamar::with('tipe:id,nama_tipe')->select('id_kamar', 'tipe_id', 'harga', 'status_kamar')->get();
 
         return Inertia::render('admin/laporan/kamar', [
             'data' => $data,
@@ -123,9 +124,50 @@ class LaporanController extends Controller
         ]);
     }
 
+    public function pendapatan(Request $request): Response
+    {
+        $mode = $request->input('mode', 'tanggal');
+
+        if (! in_array($mode, ['tanggal', 'bulan', 'tahun'], true)) {
+            $mode = 'tanggal';
+        }
+
+        $data = [];
+        $loaded = false;
+
+        if ($mode === 'tahun') {
+            $tahun = $request->input('tahun', '');
+
+            if ($tahun !== '' && ctype_digit($tahun)) {
+                $loaded = true;
+                $data = $this->getPendapatanByTahun((int) $tahun);
+            }
+        } else {
+            [$dari, $sampai] = $this->resolveRange($mode, $request);
+
+            if ($dari !== null && $sampai !== null) {
+                $loaded = true;
+                $data = $this->getPendapatanByRange($dari, $sampai);
+            }
+        }
+
+        return Inertia::render('admin/laporan/pendapatan', [
+            'mode' => $mode,
+            'data' => $data,
+            'loaded' => $loaded,
+            'filters' => [
+                'dari' => $request->input('dari', ''),
+                'sampai' => $request->input('sampai', ''),
+                'dari_bulan' => $request->input('dari_bulan', ''),
+                'sampai_bulan' => $request->input('sampai_bulan', ''),
+                'tahun' => $request->input('tahun', ''),
+            ],
+        ]);
+    }
+
     public function exportPdf(Request $request, string $type): HttpResponse
     {
-        if (! in_array($type, ['kamar', 'tamu', 'reservasi', 'checkin', 'checkout'], true)) {
+        if (! in_array($type, ['kamar', 'tamu', 'reservasi', 'checkin', 'checkout', 'pendapatan'], true)) {
             abort(404);
         }
 
@@ -133,9 +175,40 @@ class LaporanController extends Controller
 
         if (in_array($type, ['kamar', 'tamu'], true)) {
             $data = match ($type) {
-                'kamar' => Kamar::select('id_kamar', 'tipe_kamar', 'harga', 'status_kamar')->get(),
+                'kamar' => Kamar::with('tipe:id,nama_tipe')->select('id_kamar', 'tipe_id', 'harga', 'status_kamar')->get(),
                 'tamu' => Tamu::select('nik', 'nama', 'jk', 'nohp', 'alamat')->get(),
             };
+        } elseif ($type === 'pendapatan') {
+            $mode = $request->input('mode', 'tanggal');
+
+            if (! in_array($mode, ['tanggal', 'bulan', 'tahun'], true)) {
+                $mode = 'tanggal';
+            }
+
+            Carbon::setLocale('id');
+
+            if ($mode === 'tahun') {
+                $tahun = $request->input('tahun', '');
+
+                if ($tahun === '' || ! ctype_digit($tahun)) {
+                    abort(422, 'Tahun belum diisi.');
+                }
+
+                $periode = "Tahun {$tahun}";
+                $data = $this->getPendapatanByTahun((int) $tahun);
+            } else {
+                [$dari, $sampai] = $this->resolveRange($mode, $request);
+
+                if ($dari === null || $sampai === null) {
+                    abort(422, 'Filter belum diisi.');
+                }
+
+                $periode = $mode === 'bulan'
+                    ? Carbon::parse($request->input('dari_bulan').'-01')->translatedFormat('F Y').' — '.Carbon::parse($request->input('sampai_bulan').'-01')->translatedFormat('F Y')
+                    : Carbon::parse($dari)->translatedFormat('d F Y').' — '.Carbon::parse($sampai)->translatedFormat('d F Y');
+
+                $data = $this->getPendapatanByRange($dari, $sampai);
+            }
         } else {
             $mode = $request->input('mode') === 'bulan' ? 'bulan' : 'tanggal';
             [$dari, $sampai] = $this->resolveRange($mode, $request);
@@ -163,13 +236,22 @@ class LaporanController extends Controller
             'reservasi' => 'Laporan Reservasi',
             'checkin' => 'Laporan Check-in',
             'checkout' => 'Laporan Check-out',
+            'pendapatan' => 'Laporan Pendapatan',
         ];
+
+        $columnLabel = null;
+
+        if ($type === 'pendapatan') {
+            $pendapatanMode = $request->input('mode', 'tanggal');
+            $columnLabel = $pendapatanMode === 'tahun' ? 'Bulan' : 'Tanggal';
+        }
 
         $pdf = Pdf::loadView('pdf.laporan', [
             'type' => $type,
             'title' => $titles[$type],
             'data' => $data,
             'periode' => $periode,
+            'columnLabel' => $columnLabel,
             'logoPath' => public_path('assets/images/tankayo.png'),
             'tglCetak' => Carbon::now()->translatedFormat('d F Y H:i'),
         ])->setPaper('a4', 'landscape');
@@ -270,5 +352,64 @@ class LaporanController extends Controller
             ])
             ->values()
             ->all();
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function getPendapatanByRange(string $dari, string $sampai): array
+    {
+        return DB::table('reservasi')
+            ->whereIn('status', ['diterima', 'checkin', 'selesai'])
+            ->whereDate('created_at', '>=', $dari)
+            ->whereDate('created_at', '<=', $sampai)
+            ->select(
+                DB::raw('DATE(created_at) as tanggal'),
+                DB::raw('SUM(totalbayar) as jumlah'),
+            )
+            ->groupBy(DB::raw('DATE(created_at)'))
+            ->orderBy('tanggal')
+            ->get()
+            ->map(fn ($row) => [
+                'label' => Carbon::parse($row->tanggal)->translatedFormat('d F Y'),
+                'jumlah' => (float) $row->jumlah,
+            ])
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function getPendapatanByTahun(int $tahun): array
+    {
+        $bulanNames = [
+            1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
+            5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
+            9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember',
+        ];
+
+        $rows = DB::table('reservasi')
+            ->whereIn('status', ['diterima', 'checkin', 'selesai'])
+            ->whereYear('created_at', $tahun)
+            ->select(
+                DB::raw('MONTH(created_at) as bulan'),
+                DB::raw('SUM(totalbayar) as jumlah'),
+            )
+            ->groupBy(DB::raw('MONTH(created_at)'))
+            ->orderBy('bulan')
+            ->get()
+            ->keyBy('bulan');
+
+        $data = [];
+
+        for ($m = 1; $m <= 12; $m++) {
+            $data[] = [
+                'label' => $bulanNames[$m],
+                'jumlah' => isset($rows[$m]) ? (float) $rows[$m]->jumlah : 0,
+            ];
+        }
+
+        return $data;
     }
 }

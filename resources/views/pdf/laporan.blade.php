@@ -205,6 +205,9 @@
                     <th style="width: 12%;">Tgl Checkout</th>
                     <th style="width: 11%; text-align: right;">Deposit</th>
                     <th style="width: 12%; text-align: right;">Potongan</th>
+                @elseif($type === 'pendapatan')
+                    <th style="width: 50%;">{{ $columnLabel ?? 'Periode' }}</th>
+                    <th style="width: 50%; text-align: right;">Jumlah</th>
                 @endif
             </tr>
         </thead>
@@ -213,7 +216,7 @@
                 <tr>
                     @if($type === 'kamar')
                         <td>{{ $row['id_kamar'] }}</td>
-                        <td>{{ $row['tipe_kamar'] }}</td>
+                        <td>{{ $row->tipe->nama_tipe ?? '-' }}</td>
                         <td class="text-right">Rp {{ number_format($row['harga'], 0, ',', '.') }}</td>
                         <td>{{ $row['status_kamar'] }}</td>
                     @elseif($type === 'tamu')
@@ -257,6 +260,9 @@
                         <td>{{ $row['tglcheckout'] }}</td>
                         <td class="text-right">Rp {{ number_format($row['deposit'], 0, ',', '.') }}</td>
                         <td class="text-right">Rp {{ number_format($row['potongan'], 0, ',', '.') }}</td>
+                    @elseif($type === 'pendapatan')
+                        <td>{{ $row['label'] }}</td>
+                        <td class="text-right">Rp {{ number_format($row['jumlah'], 0, ',', '.') }}</td>
                     @endif
                 </tr>
             @empty
@@ -265,6 +271,14 @@
                 </tr>
             @endforelse
         </tbody>
+        @if($type === 'pendapatan' && count($data) > 0)
+        <tfoot>
+            <tr style="font-weight: bold; border-top: 2px solid #111827;">
+                <td style="padding: 9px 8px; font-size: 10px;">Total</td>
+                <td style="padding: 9px 8px; font-size: 10px; text-align: right;">Rp {{ number_format(collect($data)->sum('jumlah'), 0, ',', '.') }}</td>
+            </tr>
+        </tfoot>
+        @endif
     </table>
 
     <div class="footer-note">

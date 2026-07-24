@@ -6,6 +6,15 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+type RekeningItem = {
+    id: number;
+    jenis: 'bank' | 'qris' | 'e-wallet';
+    nama: string;
+    nomor: string | null;
+    foto: string | null;
+};
 
 type ReservasiData = {
     idbooking: string;
@@ -21,18 +30,28 @@ type ReservasiData = {
 
 type Props = {
     reservasi: ReservasiData;
+    rekening: RekeningItem[];
 };
 
 const formatRupiah = (n: number) =>
     new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
 
-export default function PaymentUpload({ reservasi }: Props) {
+const jenisLabel: Record<string, string> = {
+    bank: 'Bank',
+    qris: 'QRIS',
+    'e-wallet': 'E-Wallet',
+};
+
+export default function PaymentUpload({ reservasi, rekening }: Props) {
     const { errors } = usePage().props as { errors: Record<string, string> };
     const fileRef = useRef<HTMLInputElement>(null);
     const [preview, setPreview] = useState<string | null>(null);
     const [file, setFile] = useState<File | null>(null);
     const [submitting, setSubmitting] = useState(false);
     const [timeLeft, setTimeLeft] = useState('');
+    const [selectedRekeningId, setSelectedRekeningId] = useState<string>('');
+
+    const selectedRekening = rekening.find((r) => r.id.toString() === selectedRekeningId) ?? null;
 
     useEffect(() => {
         if (!reservasi.batas_waktu || reservasi.status !== 'diproses') {
@@ -75,13 +94,14 @@ export default function PaymentUpload({ reservasi }: Props) {
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!file) {
+        if (!file || !selectedRekeningId) {
             return;
         }
 
         setSubmitting(true);
         const formData = new FormData();
         formData.append('bukti_bayar', file);
+        formData.append('rekening_id', selectedRekeningId);
         formData.append('_method', 'POST');
 
         router.post(`/portal/booking/${reservasi.idbooking}/payment`, formData, {
@@ -121,24 +141,6 @@ export default function PaymentUpload({ reservasi }: Props) {
                                 <Badge variant="outline">{reservasi.tipe}</Badge>
                             </div>
                         </div>
-                         <div className="mb-4 space-y-2 rounded-md bg-muted p-3 text-sm">
-                            <div className="flex justify-between">
-                                <span className="text-muted-foreground">Silahkan Transfer Ke Salah Satu Bank Berikut</span>
-                                <span className="font-mono"></span>
-                            </div>
-                            <div className="flex justify-between">
-                                <span className="text-muted-foreground"></span>
-                                <span></span>
-                            </div>
-                              <div className="flex justify-between">
-                                <Badge variant="outline">Bank Nagari</Badge>
-                                <span className='font-semibold'>7100.14.345644-8</span>
-                            </div>
-                            <div className="flex justify-between">
-                                 <Badge variant="outline">BRI</Badge>
-                                <span className="font-semibold">034101000523508</span>
-                            </div>
-                        </div>
 
                         {reservasi.batas_waktu && reservasi.status === 'diproses' && (
                             <div className={`mb-4 flex items-center gap-2 rounded-md p-3 text-sm ${
@@ -164,6 +166,45 @@ export default function PaymentUpload({ reservasi }: Props) {
 
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div className="space-y-2">
+                                <Label>Transfer Ke</Label>
+                                <Select value={selectedRekeningId} onValueChange={setSelectedRekeningId}>
+                                    <SelectTrigger className="w-full">
+                                        <SelectValue placeholder="Pilih rekening tujuan transfer" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {rekening.map((r) => (
+                                            <SelectItem key={r.id} value={r.id.toString()}>
+                                                [{jenisLabel[r.jenis]}] {r.nama}{r.nomor ? ` — ${r.nomor}` : ''}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                {errors.rekening_id && <p className="text-sm text-destructive">{errors.rekening_id}</p>}
+                            </div>
+
+                            {selectedRekening && (
+                                <div className="rounded-md bg-muted p-3 text-sm">
+                                    <p className="mb-2 font-medium">Detail Rekening Tujuan:</p>
+                                    <div className="flex items-center gap-3">
+                                        {selectedRekening.foto && (
+                                            <img
+                                                src={`/storage/${selectedRekening.foto}`}
+                                                alt={selectedRekening.nama}
+                                                className="h-16 w-16 rounded-md object-cover"
+                                            />
+                                        )}
+                                        <div>
+                                            <p className="font-semibold">{selectedRekening.nama}</p>
+                                            <p className="text-xs text-muted-foreground capitalize">{jenisLabel[selectedRekening.jenis]}</p>
+                                            {selectedRekening.nomor && (
+                                                <p className="font-mono text-sm">{selectedRekening.nomor}</p>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="space-y-2">
                                 <Label htmlFor="bukti_bayar">Bukti Pembayaran</Label>
                                 <Input
                                     ref={fileRef}
@@ -183,7 +224,7 @@ export default function PaymentUpload({ reservasi }: Props) {
                             )}
 
                             <div className="flex gap-2">
-                                <Button type="submit" className="flex-1" disabled={!file || submitting}>
+                                <Button type="submit" className="flex-1" disabled={!file || !selectedRekeningId || submitting}>
                                     {submitting ? 'Mengupload...' : (
                                         <>
                                             <Upload className="h-4 w-4" />

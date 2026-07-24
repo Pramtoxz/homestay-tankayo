@@ -5,8 +5,10 @@ namespace Database\Seeders;
 use App\Models\Checkin;
 use App\Models\Checkout;
 use App\Models\Kamar;
+use App\Models\Rekening;
 use App\Models\Reservasi;
 use App\Models\Tamu;
+use App\Models\Tipe;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -32,6 +34,22 @@ class DatabaseSeeder extends Seeder
             'email' => 'user@gmail.com',
             'password' => Hash::make('password'),
         ]);
+
+        $tipeNames = [
+            'Superior Room Balcony',
+            'Deluxe Room Balcony',
+            'Twinbed Room Balcony',
+            'Junior Suite Room Balcony',
+            'Triple Room Balcony',
+        ];
+
+        foreach ($tipeNames as $name) {
+            Tipe::create(['nama_tipe' => $name, 'aktif' => true]);
+        }
+
+        Rekening::create(['jenis' => 'bank', 'nama' => 'Bank Nagari', 'nomor' => '7100.14.345644-8', 'aktif' => true]);
+        Rekening::create(['jenis' => 'bank', 'nama' => 'BRI', 'nomor' => '034101000523508', 'aktif' => true]);
+        Rekening::create(['jenis' => 'qris', 'nama' => 'QRIS Tankayo', 'nomor' => null, 'aktif' => true]);
 
         // Dibuat satu per satu (bukan factory(30)->create()) karena IdGenerator
         // baca "ID terakhir" dari DB — factory batch evaluasi semua definition()

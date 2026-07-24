@@ -8,7 +8,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 type TipeSummary = {
-    tipe_kamar: string;
+    tipe_id: number;
+    nama_tipe: string;
+    foto: string | null;
     total: number;
     tersedia: number;
     harga_mulai: number | null;
@@ -17,10 +19,9 @@ type TipeSummary = {
 type KamarItem = {
     id_kamar: string;
     nama: string;
-    tipe_kamar: string;
+    tipe_id: number;
     harga: number;
     fasilitas: string | null;
-    cover: string | null;
     deskripsi: string | null;
 };
 
@@ -42,7 +43,7 @@ export default function Booking() {
     const [tipeSummary, setTipeSummary] = useState<TipeSummary[] | null>(null);
     const [loadingSummary, setLoadingSummary] = useState(false);
 
-    const [selectedTipe, setSelectedTipe] = useState<string | null>(null);
+    const [selectedTipe, setSelectedTipe] = useState<number | null>(null);
     const [kamarList, setKamarList] = useState<KamarItem[] | null>(null);
     const [loadingKamar, setLoadingKamar] = useState(false);
 
@@ -74,7 +75,6 @@ export default function Booking() {
 
     const tanggalValid = tglcheckin !== '' && tglcheckout !== '' && days > 0;
 
-    // Reset pilihan tipe/kamar tiap tanggal berubah (adjust state during render, bukan di useEffect).
     const [prevCheckin, setPrevCheckin] = useState(tglcheckin);
     const [prevCheckout, setPrevCheckout] = useState(tglcheckout);
 
@@ -122,7 +122,7 @@ export default function Booking() {
             setLoadingKamar(true);
 
             try {
-                const params = new URLSearchParams({ tglcheckin, tglcheckout, tipe_kamar: selectedTipe });
+                const params = new URLSearchParams({ tglcheckin, tglcheckout, tipe_id: selectedTipe.toString() });
                 const response = await fetch(`/portal/booking-search/kamar?${params.toString()}`, {
                     headers: { Accept: 'application/json' },
                 });
@@ -226,15 +226,15 @@ export default function Booking() {
                                 <div className="grid gap-3 sm:grid-cols-2">
                                     {tipeSummary?.map((s) => {
                                         const penuh = s.tersedia <= 0;
-                                        const active = selectedTipe === s.tipe_kamar;
+                                        const active = selectedTipe === s.tipe_id;
 
                                         return (
                                             <button
-                                                key={s.tipe_kamar}
+                                                key={s.tipe_id}
                                                 type="button"
                                                 disabled={penuh}
                                                 onClick={() => {
-                                                    setSelectedTipe(s.tipe_kamar);
+                                                    setSelectedTipe(s.tipe_id);
                                                     setSelectedKamar(null);
                                                 }}
                                                 className={`rounded-md border p-4 text-left transition-all ${
@@ -245,7 +245,7 @@ export default function Booking() {
                                                           : 'hover:border-muted-foreground/50'
                                                 }`}
                                             >
-                                                <p className="font-semibold">{s.tipe_kamar}</p>
+                                                <p className="font-semibold">{s.nama_tipe}</p>
                                                 {s.harga_mulai !== null && (
                                                     <p className="text-sm text-muted-foreground">
                                                         Mulai {formatRupiah(s.harga_mulai)}/malam
@@ -285,13 +285,6 @@ export default function Booking() {
                                             }`}
                                             onClick={() => setSelectedKamar(k)}
                                         >
-                                            {k.cover && (
-                                                <img
-                                                    src={`/storage/${k.cover}`}
-                                                    alt={k.nama}
-                                                    className="mb-3 h-32 w-full rounded object-cover"
-                                                />
-                                            )}
                                             <p className="font-semibold">{k.nama}</p>
                                             <p className="text-sm text-muted-foreground">{formatRupiah(k.harga)}/malam</p>
                                             {k.fasilitas && <p className="mt-1 text-xs text-muted-foreground">{k.fasilitas}</p>}

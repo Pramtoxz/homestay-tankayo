@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 
-type KamarRow = { id_kamar: string; tipe_kamar: string; harga: number; status_kamar: string };
+type KamarRow = { id_kamar: string; tipe: { id: number; nama_tipe: string } | null; harga: number; status_kamar: string };
 
 type Props = {
     data: KamarRow[];
@@ -49,7 +49,7 @@ export default function LaporanKamar({ data }: Props) {
                                         {data.map((r) => (
                                             <tr key={r.id_kamar} className="border-b hover:bg-muted/50">
                                                 <td className="px-4 py-3 font-mono text-xs">{r.id_kamar}</td>
-                                                <td className="px-4 py-3">{r.tipe_kamar}</td>
+                                                <td className="px-4 py-3">{r.tipe?.nama_tipe ?? '-'}</td>
                                                 <td className="px-4 py-3 text-right">{formatRupiah(r.harga)}</td>
                                                 <td className="px-4 py-3">
                                                     <Badge variant={r.status_kamar === 'tersedia' ? 'default' : 'destructive'}>

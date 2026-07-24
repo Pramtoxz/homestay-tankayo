@@ -230,7 +230,7 @@
                     </tr>
                     <tr>
                         <td class="kv-label">Tipe Kamar</td>
-                        <td>: {{ $reservasi->kamar->tipe_kamar ?? '-' }}</td>
+                        <td>: {{ $reservasi->kamar->tipe->nama_tipe ?? '-' }}</td>
                     </tr>
                 </table>
             </td>

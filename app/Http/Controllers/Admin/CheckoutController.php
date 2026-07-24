@@ -20,7 +20,7 @@ class CheckoutController extends Controller
 {
     public function index(Request $request): Response
     {
-        $query = Checkout::with(['checkin.reservasi.tamu', 'checkin.reservasi.kamar']);
+        $query = Checkout::with(['checkin.reservasi.tamu', 'checkin.reservasi.kamar.tipe']);
 
         if ($search = $request->get('search')) {
             $query->where(function ($q) use ($search) {
@@ -52,7 +52,7 @@ class CheckoutController extends Controller
 
     public function searchCheckin(Request $request): JsonResponse
     {
-        $query = Checkin::with(['reservasi.tamu', 'reservasi.kamar'])
+        $query = Checkin::with(['reservasi.tamu', 'reservasi.kamar.tipe'])
             ->whereDoesntHave('checkout')
             ->whereHas('reservasi', fn ($q) => $q->where('status', 'checkin'));
 
@@ -76,6 +76,7 @@ class CheckoutController extends Controller
             'idcheckin' => 'required|exists:checkin,idcheckin',
             'tglcheckout' => 'required|date',
             'potongan' => 'required|numeric|min:0',
+            'totalbayar' => 'required|numeric|min:0',
             'keterangan' => 'nullable|string',
         ]);
 
@@ -85,11 +86,17 @@ class CheckoutController extends Controller
             return back()->withErrors(['tglcheckout' => 'Tanggal check-out tidak boleh sebelum tanggal check-in.']);
         }
 
-        $grandtotal = $checkin->reservasi->totalbayar - $validated['potongan'];
+        $grandtotal = max($checkin->reservasi->totalbayar - $validated['potongan'], 0);
+        $deposit = $checkin->deposit;
+        $kekurangan = ($validated['potongan'] > $deposit) ? ($validated['potongan'] - $deposit) : 0;
+
+        if ($validated['totalbayar'] < $kekurangan) {
+            return back()->withErrors(['totalbayar' => 'Total bayar tidak boleh kurang dari kekurangan ('.number_format($kekurangan, 0, ',', '.').').']);
+        }
 
         $idcheckout = IdGenerator::checkout();
         $validated['idcheckout'] = $idcheckout;
-        $validated['grandtotal'] = max($grandtotal, 0);
+        $validated['grandtotal'] = $grandtotal;
 
         Checkout::create($validated);
 
@@ -104,7 +111,7 @@ class CheckoutController extends Controller
 
     public function show(Checkout $checkout): Response
     {
-        $checkout->load(['checkin.reservasi.tamu', 'checkin.reservasi.kamar']);
+        $checkout->load(['checkin.reservasi.tamu', 'checkin.reservasi.kamar.tipe']);
 
         return Inertia::render('admin/checkout/show', [
             'checkout' => $checkout,
@@ -113,7 +120,7 @@ class CheckoutController extends Controller
 
     public function faktur(Checkout $checkout): HttpResponse
     {
-        $checkout->load(['checkin.reservasi.tamu', 'checkin.reservasi.kamar']);
+        $checkout->load(['checkin.reservasi.tamu', 'checkin.reservasi.kamar.tipe']);
 
         Carbon::setLocale('id');
 

@@ -9,10 +9,11 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 type TamuOption = { nik: string; nama: string; alamat: string; nohp: string };
+type TipeInfo = { id: number; nama_tipe: string };
 type KamarOption = {
     id_kamar: string;
     nama: string;
-    tipe_kamar: string;
+    tipe: TipeInfo | null;
     harga: number;
     fasilitas: string | null;
     status_kamar: string;
@@ -27,25 +28,18 @@ type ReservasiData = {
     tipe: string;
     status: string;
     tamu: { nik: string; nama: string } | null;
-    kamar: { id_kamar: string; nama: string; tipe_kamar: string; harga: number } | null;
+    kamar: { id_kamar: string; nama: string; tipe: TipeInfo | null; harga: number } | null;
 };
 
 type Props = {
     reservasi?: ReservasiData;
+    tipeOptions: TipeInfo[];
 };
-
-const TIPE_KAMAR_OPTIONS = [
-    'Superior Room Balcony',
-    'Deluxe Room Balcony',
-    'Twinbed Room Balcony',
-    'Junior Suite Room Balcony',
-    'Triple Room Balcony',
-];
 
 const formatRupiah = (n: number) =>
     new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
 
-export default function ReservasiForm({ reservasi }: Props) {
+export default function ReservasiForm({ reservasi, tipeOptions }: Props) {
     const isEdit = !!reservasi;
     const { errors } = usePage().props as { errors: Record<string, string> };
 
@@ -67,7 +61,7 @@ export default function ReservasiForm({ reservasi }: Props) {
             ? {
                   id_kamar: reservasi.kamar.id_kamar,
                   nama: reservasi.kamar.nama,
-                  tipe_kamar: reservasi.kamar.tipe_kamar,
+                  tipe: reservasi.kamar.tipe,
                   harga: reservasi.kamar.harga,
                   fasilitas: null,
                   status_kamar: '',
@@ -122,12 +116,12 @@ export default function ReservasiForm({ reservasi }: Props) {
     const kamarFilters = useMemo(
         () => [
             {
-                key: 'tipe_kamar',
+                key: 'tipe_id',
                 label: 'Tipe Kamar',
-                options: TIPE_KAMAR_OPTIONS.map((tipe) => ({ value: tipe, label: tipe })),
+                options: tipeOptions.map((t) => ({ value: t.id.toString(), label: t.nama_tipe })),
             },
         ],
-        [],
+        [tipeOptions],
     );
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -259,7 +253,7 @@ export default function ReservasiForm({ reservasi }: Props) {
                                         </div>
                                         <div className="space-y-2">
                                             <Label htmlFor="kamar_tipe">Tipe Kamar</Label>
-                                            <Input id="kamar_tipe" readOnly placeholder="Belum dipilih" value={selectedKamar?.tipe_kamar ?? ''} />
+                                            <Input id="kamar_tipe" readOnly placeholder="Belum dipilih" value={selectedKamar?.tipe?.nama_tipe ?? ''} />
                                         </div>
                                         <div className="space-y-2">
                                             <Label htmlFor="kamar_fasilitas">Fasilitas</Label>
@@ -378,7 +372,7 @@ export default function ReservasiForm({ reservasi }: Props) {
                 filters={kamarFilters}
                 columns={['ID', 'Nama', 'Tipe Kamar', 'Harga/Malam']}
                 getRowKey={(k) => k.id_kamar}
-                renderRow={(k) => [k.id_kamar, k.nama, k.tipe_kamar, formatRupiah(k.harga)]}
+                renderRow={(k) => [k.id_kamar, k.nama, k.tipe?.nama_tipe ?? '-', formatRupiah(k.harga)]}
                 onSelect={setSelectedKamar}
                 emptyMessage="Tidak ada kamar tersedia."
             />

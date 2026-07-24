@@ -5,8 +5,10 @@ use App\Http\Controllers\Admin\CheckoutController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\KamarController;
 use App\Http\Controllers\Admin\LaporanController;
+use App\Http\Controllers\Admin\RekeningController;
 use App\Http\Controllers\Admin\ReservasiController;
 use App\Http\Controllers\Admin\TamuController;
+use App\Http\Controllers\Admin\TipeController;
 use App\Http\Controllers\OnlineController;
 use App\Http\Controllers\WelcomeController;
 use Illuminate\Support\Facades\Route;
@@ -21,6 +23,7 @@ Route::middleware('auth')->group(function () {
 
     // Admin only CRUD
     Route::middleware('role:admin')->prefix('admin')->name('admin.')->group(function () {
+        Route::resource('tipe', TipeController::class)->except(['show']);
         Route::resource('tamu', TamuController::class)->except(['show']);
         Route::resource('kamar', KamarController::class)->except(['show']);
         Route::get('reservasi-search/tamu', [ReservasiController::class, 'searchTamu'])->name('reservasi.search-tamu');
@@ -34,6 +37,7 @@ Route::middleware('auth')->group(function () {
         Route::get('checkout-search/checkin', [CheckoutController::class, 'searchCheckin'])->name('checkout.search-checkin');
         Route::get('checkout/{checkout}/faktur', [CheckoutController::class, 'faktur'])->name('checkout.faktur');
         Route::resource('checkout', CheckoutController::class)->only(['index', 'create', 'store', 'show']);
+        Route::resource('rekening', RekeningController::class)->except(['show']);
     });
 
     // Laporan — admin + pimpinan
@@ -43,6 +47,7 @@ Route::middleware('auth')->group(function () {
         Route::get('reservasi', [LaporanController::class, 'reservasi'])->name('reservasi');
         Route::get('checkin', [LaporanController::class, 'checkin'])->name('checkin');
         Route::get('checkout', [LaporanController::class, 'checkout'])->name('checkout');
+        Route::get('pendapatan', [LaporanController::class, 'pendapatan'])->name('pendapatan');
         Route::get('{type}/export-pdf', [LaporanController::class, 'exportPdf'])->name('export-pdf');
     });
 

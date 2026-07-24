@@ -32,6 +32,7 @@ class Reservasi extends Model
         'totalbayar',
         'tipe',
         'buktibayar',
+        'rekening_id',
         'online',
         'status',
         'batas_waktu',
@@ -69,6 +70,14 @@ class Reservasi extends Model
     public function kamar(): BelongsTo
     {
         return $this->belongsTo(Kamar::class, 'idkamar', 'id_kamar');
+    }
+
+    /**
+     * @return BelongsTo<Rekening, $this>
+     */
+    public function rekening(): BelongsTo
+    {
+        return $this->belongsTo(Rekening::class);
     }
 
     /**

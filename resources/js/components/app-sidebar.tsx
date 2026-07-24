@@ -5,8 +5,11 @@ import {
     CalendarPlus,
     CalendarMinus,
     ClipboardList,
+    CreditCard,
     LayoutGrid,
+    Tags,
     Users,
+    Wallet,
 } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavMain } from '@/components/nav-main';
@@ -45,8 +48,10 @@ const getNavItems = (role: string): { group: string; items: NavItem[] }[] => {
         groups.push({
             group: 'Master',
             items: [
+                { title: 'Tipe Kamar', href: '/admin/tipe', icon: Tags },
                 { title: 'Tamu', href: '/admin/tamu', icon: Users },
                 { title: 'Kamar', href: '/admin/kamar', icon: BedDouble },
+                { title: 'Rekening', href: '/admin/rekening', icon: CreditCard },
             ],
         });
 
@@ -69,6 +74,7 @@ const getNavItems = (role: string): { group: string; items: NavItem[] }[] => {
                 { title: 'Laporan Reservasi', href: '/laporan/reservasi', icon: ClipboardList },
                 { title: 'Laporan Check-in', href: '/laporan/checkin', icon: CalendarCheck },
                 { title: 'Laporan Check-out', href: '/laporan/checkout', icon: CalendarMinus },
+                { title: 'Laporan Pendapatan', href: '/laporan/pendapatan', icon: Wallet },
             ],
         });
     }

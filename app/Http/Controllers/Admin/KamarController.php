@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Kamar;
+use App\Models\Tipe;
 use App\Services\IdGenerator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -14,7 +15,7 @@ class KamarController extends Controller
 {
     public function index(Request $request): Response
     {
-        $query = Kamar::query();
+        $query = Kamar::with('tipe');
 
         if ($search = $request->get('search')) {
             $query->where(function ($q) use ($search) {
@@ -29,7 +30,7 @@ class KamarController extends Controller
 
         $sortBy = $request->get('sort_by', 'created_at');
         $sortOrder = $request->get('sort_order', 'desc');
-        $allowedSorts = ['id_kamar', 'nama', 'tipe_kamar', 'harga', 'status_kamar', 'created_at'];
+        $allowedSorts = ['id_kamar', 'nama', 'harga', 'status_kamar', 'created_at'];
         if (in_array($sortBy, $allowedSorts)) {
             $query->orderBy($sortBy, $sortOrder);
         }
@@ -46,6 +47,7 @@ class KamarController extends Controller
     {
         return Inertia::render('admin/kamar/form', [
             'nextId' => IdGenerator::kamar(),
+            'tipeOptions' => Tipe::where('aktif', true)->orderBy('nama_tipe')->get(['id', 'nama_tipe']),
         ]);
     }
 
@@ -53,19 +55,14 @@ class KamarController extends Controller
     {
         $validated = $request->validate([
             'nama' => 'required|string|max:50',
-            'tipe_kamar' => 'required|in:Superior Room Balcony,Deluxe Room Balcony,Twinbed Room Balcony,Junior Suite Room Balcony,Triple Room Balcony',
+            'tipe_id' => 'required|exists:tipe,id',
             'harga' => 'required|numeric|min:0',
             'fasilitas' => 'nullable|string',
             'deskripsi' => 'nullable|string',
-            'cover' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
             'status_kamar' => 'required|in:tersedia,tidak tersedia',
         ]);
 
         $validated['id_kamar'] = IdGenerator::kamar();
-
-        if ($request->hasFile('cover')) {
-            $validated['cover'] = $request->file('cover')->store('kamar', 'public');
-        }
 
         Kamar::create($validated);
 
@@ -77,6 +74,7 @@ class KamarController extends Controller
     {
         return Inertia::render('admin/kamar/form', [
             'kamar' => $kamar,
+            'tipeOptions' => Tipe::where('aktif', true)->orderBy('nama_tipe')->get(['id', 'nama_tipe']),
         ]);
     }
 
@@ -84,20 +82,12 @@ class KamarController extends Controller
     {
         $validated = $request->validate([
             'nama' => 'required|string|max:50',
-            'tipe_kamar' => 'required|in:Superior Room Balcony,Deluxe Room Balcony,Twinbed Room Balcony,Junior Suite Room Balcony,Triple Room Balcony',
+            'tipe_id' => 'required|exists:tipe,id',
             'harga' => 'required|numeric|min:0',
             'fasilitas' => 'nullable|string',
             'deskripsi' => 'nullable|string',
-            'cover' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
             'status_kamar' => 'required|in:tersedia,tidak tersedia',
         ]);
-
-        if ($request->hasFile('cover')) {
-            if ($kamar->cover) {
-                \Storage::disk('public')->delete($kamar->cover);
-            }
-            $validated['cover'] = $request->file('cover')->store('kamar', 'public');
-        }
 
         $kamar->update($validated);
 
@@ -107,10 +97,6 @@ class KamarController extends Controller
 
     public function destroy(Kamar $kamar): RedirectResponse
     {
-        if ($kamar->cover) {
-            \Storage::disk('public')->delete($kamar->cover);
-        }
-
         $kamar->delete();
 
         return redirect()->route('admin.kamar.index')
