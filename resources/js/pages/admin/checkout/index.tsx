@@ -1,7 +1,7 @@
 import { Head, router } from '@inertiajs/react';
 import type {ColumnDef} from '@tanstack/react-table';
 import { Plus, Eye, Printer } from 'lucide-react';
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { DataTable, SortableHeader  } from '@/components/data-table';
 import type {PaginationMeta} from '@/components/data-table';
 import { Button } from '@/components/ui/button';
@@ -67,16 +67,6 @@ export default function CheckoutIndex({ checkout, filters }: Props) {
         window.open(`/admin/checkout/${id}/faktur`, '_blank');
     }, []);
 
-    useEffect(() => {
-        return router.on('flash', (event) => {
-            const fakturUrl = (event as CustomEvent).detail?.flash?.faktur_url as string | undefined;
-
-            if (fakturUrl) {
-                window.open(fakturUrl, '_blank');
-            }
-        });
-    }, []);
-
     const columns: ColumnDef<CheckoutItem>[] = useMemo(() => [
         {
             accessorKey: 'idcheckout',
@@ -100,7 +90,7 @@ export default function CheckoutIndex({ checkout, filters }: Props) {
         },
         {
             accessorKey: 'potongan',
-            header: ({ column }) => <SortableHeader title="Potongan" column={column} className="justify-end" />,
+            header: ({ column }) => <SortableHeader title="Potongan/Denda" column={column} className="justify-end" />,
             cell: ({ row }) => <div className="text-right">{formatRupiah(row.original.potongan)}</div>,
         },
         {

@@ -195,9 +195,25 @@ class OnlineController extends Controller
             abort(403);
         }
 
-        $reservasi->load(['tamu', 'kamar']);
+        $reservasi->load(['tamu', 'kamar.tipe', 'checkin']);
 
         Carbon::setLocale('id');
+
+        $checkout = $reservasi->checkin?->checkout;
+
+        if ($checkout) {
+            $checkout->load('checkin');
+
+            $pdf = Pdf::loadView('pdf.faktur-checkout', [
+                'checkout' => $checkout,
+                'reservasi' => $reservasi,
+                'logoPath' => public_path('assets/images/tankayo.png'),
+                'tglCheckout' => Carbon::parse($checkout->tglcheckout)->translatedFormat('d F Y'),
+                'tglCetak' => Carbon::now()->translatedFormat('d F Y H:i'),
+            ])->setPaper('a4', 'portrait');
+
+            return $pdf->stream("Faktur-Checkout-{$checkout->idcheckout}.pdf");
+        }
 
         $tglCheckin = Carbon::parse($reservasi->tglcheckin);
         $tglCheckout = Carbon::parse($reservasi->tglcheckout);

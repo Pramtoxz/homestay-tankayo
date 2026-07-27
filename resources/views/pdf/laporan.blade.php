@@ -157,7 +157,7 @@
             </td>
             <td class="doc-title-cell">
                 <div class="doc-title">{{ $title }}</div>
-                @if($periode)
+                @if ($periode)
                     <div class="doc-meta">Periode: {{ $periode }}</div>
                 @endif
                 <div class="doc-meta">Dicetak: {{ $tglCetak }}</div>
@@ -169,7 +169,7 @@
     <table class="items-table">
         <thead>
             <tr>
-                @if($type === 'kamar')
+                @if ($type === 'kamar')
                     <th style="width: 15%;">ID Kamar</th>
                     <th style="width: 30%;">Tipe Kamar</th>
                     <th style="width: 25%; text-align: right;">Harga</th>
@@ -204,7 +204,7 @@
                     <th style="width: 12%;">Tgl Check-in</th>
                     <th style="width: 12%;">Tgl Checkout</th>
                     <th style="width: 11%; text-align: right;">Deposit</th>
-                    <th style="width: 12%; text-align: right;">Potongan</th>
+                    <th style="width: 12%; text-align: right;">Potongan/Denda</th>
                 @elseif($type === 'pendapatan')
                     <th style="width: 50%;">{{ $columnLabel ?? 'Periode' }}</th>
                     <th style="width: 50%; text-align: right;">Jumlah</th>
@@ -214,7 +214,7 @@
         <tbody>
             @forelse($data as $row)
                 <tr>
-                    @if($type === 'kamar')
+                    @if ($type === 'kamar')
                         <td>{{ $row['id_kamar'] }}</td>
                         <td>{{ $row->tipe->nama_tipe ?? '-' }}</td>
                         <td class="text-right">Rp {{ number_format($row['harga'], 0, ',', '.') }}</td>
@@ -234,7 +234,7 @@
                         <td>{{ $row['tglcheckout'] }}</td>
                         <td>
                             @php
-                                $statusClass = match($row['status']) {
+                                $statusClass = match ($row['status']) {
                                     'Menunggu' => 'badge-menunggu',
                                     'Disetujui' => 'badge-disetujui',
                                     'Ditolak' => 'badge-ditolak',
@@ -271,13 +271,14 @@
                 </tr>
             @endforelse
         </tbody>
-        @if($type === 'pendapatan' && count($data) > 0)
-        <tfoot>
-            <tr style="font-weight: bold; border-top: 2px solid #111827;">
-                <td style="padding: 9px 8px; font-size: 10px;">Total</td>
-                <td style="padding: 9px 8px; font-size: 10px; text-align: right;">Rp {{ number_format(collect($data)->sum('jumlah'), 0, ',', '.') }}</td>
-            </tr>
-        </tfoot>
+        @if ($type === 'pendapatan' && count($data) > 0)
+            <tfoot>
+                <tr style="font-weight: bold; border-top: 2px solid #111827;">
+                    <td style="padding: 9px 8px; font-size: 10px;">Total</td>
+                    <td style="padding: 9px 8px; font-size: 10px; text-align: right;">Rp
+                        {{ number_format(collect($data)->sum('jumlah'), 0, ',', '.') }}</td>
+                </tr>
+            </tfoot>
         @endif
     </table>
 

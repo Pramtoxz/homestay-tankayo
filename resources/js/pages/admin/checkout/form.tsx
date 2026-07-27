@@ -2,9 +2,9 @@ import { Head, router, usePage } from '@inertiajs/react';
 import { ArrowLeft, Save } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { SearchPickerDialog } from '@/components/search-picker-dialog';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -32,12 +32,12 @@ export default function CheckoutForm() {
         idcheckin: '',
         tglcheckout: '',
         potongan: '',
-        totalbayar: '',
         keterangan: '',
     });
 
     const [selectedCheckin, setSelectedCheckin] = useState<CheckinOption | null>(null);
     const [checkinDialogOpen, setCheckinDialogOpen] = useState(false);
+    const [confirmOpen, setConfirmOpen] = useState(false);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         setValues((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -48,7 +48,6 @@ export default function CheckoutForm() {
         setValues((prev) => ({
             ...prev,
             idcheckin: c.idcheckin,
-            totalbayar: '',
             potongan: '',
         }));
     };
@@ -71,24 +70,42 @@ export default function CheckoutForm() {
         return potongan - deposit;
     }, [potongan, deposit]);
 
-    const totalbayarCheckout = useMemo(() => {
-        if (!selectedCheckin) {
-            return 0;
-        }
-
-        if (values.totalbayar !== '') {
-            return Number(values.totalbayar) || 0;
-        }
-
-        return kekurangan;
-    }, [selectedCheckin, values.totalbayar, kekurangan]);
+    const totalbayarCheckout = kekurangan;
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        router.post('/admin/checkout', {
-            ...values,
-            totalbayar: totalbayarCheckout.toString(),
-        });
+        setConfirmOpen(true);
+    };
+
+    const handleConfirmSave = () => {
+        setConfirmOpen(false);
+
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? '';
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/admin/checkout';
+        form.target = '_blank';
+
+        const addField = (name: string, value: string) => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = name;
+            input.value = value;
+            form.appendChild(input);
+        };
+
+        addField('_token', csrfToken);
+        addField('idcheckin', values.idcheckin);
+        addField('tglcheckout', values.tglcheckout);
+        addField('potongan', values.potongan);
+        addField('totalbayar', totalbayarCheckout.toString());
+        addField('keterangan', values.keterangan);
+
+        document.body.appendChild(form);
+        form.submit();
+        form.remove();
+
+        router.get('/admin/checkout');
     };
 
     return (
@@ -183,7 +200,7 @@ export default function CheckoutForm() {
                                         />
                                     </div>
                                     <div className="col-span-2 space-y-2">
-                                        <Label htmlFor="ci_total">Total Bayar Reservasi</Label>
+                                        <Label htmlFor="ci_total">Total Reservasi Yang Sudah Dibayar Lunas</Label>
                                         <Input
                                             id="ci_total"
                                             readOnly
@@ -235,32 +252,6 @@ export default function CheckoutForm() {
                                 {errors.potongan && <p className="text-sm text-destructive">{errors.potongan}</p>}
                             </div>
 
-                            {selectedCheckin && kekurangan > 0 && (
-                                <div className="rounded-md bg-orange-50 p-3 text-sm text-orange-800">
-                                    <div className="flex justify-between">
-                                        <span>Potongan melebihi deposit</span>
-                                        <Badge variant="outline" className="text-orange-800">Kekurangan</Badge>
-                                    </div>
-                                    <div className="mt-1 flex justify-between font-semibold">
-                                        <span>Tamu harus membayar kekurangan</span>
-                                        <span>{formatRupiah(kekurangan)}</span>
-                                    </div>
-                                </div>
-                            )}
-
-                            <div className="space-y-2">
-                                <Label htmlFor="totalbayar">Total Bayar Tambahan</Label>
-                                <Input
-                                    id="totalbayar"
-                                    name="totalbayar"
-                                    type="number"
-                                    value={values.totalbayar !== '' ? values.totalbayar : (selectedCheckin ? kekurangan.toString() : '')}
-                                    onChange={handleChange}
-                                    placeholder="0"
-                                />
-                                {errors.totalbayar && <p className="text-sm text-destructive">{errors.totalbayar}</p>}
-                            </div>
-
                             <div className="space-y-2">
                                 <Label htmlFor="keterangan">Keterangan</Label>
                                 <Textarea
@@ -274,32 +265,39 @@ export default function CheckoutForm() {
                             </div>
 
                             {selectedCheckin && (
-                                <div className="rounded-md bg-primary/10 p-4 text-sm space-y-1">
-                                    <div className="flex justify-between">
-                                        <span>Total Reservasi</span>
-                                        <span>{formatRupiah(totalbayarReservasi)}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span>Potongan</span>
-                                        <span className="text-destructive">- {formatRupiah(potongan)}</span>
-                                    </div>
-                                    <div className="flex justify-between border-t pt-1">
-                                        <span>Grand Total</span>
-                                        <span>{formatRupiah(grandTotal)}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span>Deposit</span>
-                                        <span>{formatRupiah(deposit)}</span>
-                                    </div>
-                                    {kekurangan > 0 && (
-                                        <div className="flex justify-between text-orange-700 font-semibold">
-                                            <span>Kekurangan</span>
-                                            <span>{formatRupiah(kekurangan)}</span>
+                                <div className="space-y-3">
+                                    <div className="rounded-md border border-dashed bg-muted/50 p-4">
+                                        <div className="flex justify-between text-sm text-muted-foreground">
+                                            <span>Total Reservasi Yang Sudah Dibayar Lunas Di Muka</span>
+                                            <span className="font-semibold text-foreground">{formatRupiah(totalbayarReservasi)}</span>
                                         </div>
-                                    )}
-                                    <div className="flex justify-between border-t pt-1 text-base font-semibold">
-                                        <span>Total Bayar</span>
-                                        <span>{formatRupiah(totalbayarCheckout)}</span>
+                                    </div>
+
+                                    <div className={`rounded-md p-4 space-y-2 ${kekurangan > 0 ? 'border-2 border-red-300 bg-red-50' : deposit > potongan && potongan > 0 ? 'border-2 border-green-300 bg-green-50' : 'border bg-card'}`}>
+                                        <div className="flex justify-between text-sm">
+                                            <span>Potongan</span>
+                                            <span className="text-destructive">- {formatRupiah(potongan)}</span>
+                                        </div>
+                                        <div className="flex justify-between text-sm border-t pt-2">
+                                            <span>Grand Total</span>
+                                            <span>{formatRupiah(grandTotal)}</span>
+                                        </div>
+                                        <div className="flex justify-between text-sm border-t pt-2">
+                                            <span>Deposit Yang Sudah Masuk</span>
+                                            <span>{formatRupiah(deposit)}</span>
+                                        </div>
+                                        {kekurangan > 0 && (
+                                            <div className="flex justify-between border-t pt-2 text-base font-bold text-red-700">
+                                                <span>Kekurangan Yang Harus Dibayar Tamu</span>
+                                                <span>{formatRupiah(kekurangan)}</span>
+                                            </div>
+                                        )}
+                                        {deposit > potongan && potongan > 0 && (
+                                            <div className="flex justify-between border-t pt-2 text-base font-bold text-green-700">
+                                                <span>Deposit Yang Harus Dikembalikan Ke Tamu</span>
+                                                <span>{formatRupiah(deposit - potongan)}</span>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             )}
@@ -330,6 +328,24 @@ export default function CheckoutForm() {
                 onSelect={handleSelectCheckin}
                 emptyMessage="Tidak ada tamu yang siap check-out."
             />
+            <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Konfirmasi Check-out</DialogTitle>
+                        <DialogDescription>
+                            Apakah yakin ingin simpan data ini?
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setConfirmOpen(false)}>
+                            Batal
+                        </Button>
+                        <Button onClick={handleConfirmSave}>
+                            Simpan
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </>
     );
 }

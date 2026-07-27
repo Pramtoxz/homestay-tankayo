@@ -344,7 +344,7 @@ export default function ReservasiShow({ reservasi, rekening }: Props) {
                                             <p className="font-medium">{formatTanggal(reservasi.checkin.checkout.tglcheckout)}</p>
                                         </div>
                                         <div>
-                                            <p className="text-muted-foreground">Potongan</p>
+                                            <p className="text-muted-foreground">Potongan/Denda</p>
                                             <p className="font-medium">
                                                 {formatRupiah(reservasi.checkin.checkout.potongan)}
                                             </p>

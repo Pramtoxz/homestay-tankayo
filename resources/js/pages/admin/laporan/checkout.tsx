@@ -175,7 +175,7 @@ export default function LaporanCheckout({ mode, data, loaded, filters }: Props) 
                                             <th className="px-4 py-3 text-left font-medium">Tgl Check-in</th>
                                             <th className="px-4 py-3 text-left font-medium">Tgl Checkout</th>
                                             <th className="px-4 py-3 text-right font-medium">Deposit</th>
-                                            <th className="px-4 py-3 text-right font-medium">Potongan</th>
+                                            <th className="px-4 py-3 text-right font-medium">Potongan/Denda</th>
                                         </tr>
                                     </thead>
                                     <tbody>

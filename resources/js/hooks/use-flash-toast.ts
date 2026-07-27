@@ -13,7 +13,17 @@ export function useFlashToast(): void {
                 return;
             }
 
-            toast[data.type](data.message);
+            if (data.action) {
+                toast[data.type](data.message, {
+                    action: {
+                        label: data.action.label,
+                        onClick: () => window.open(data.action!.url, '_blank'),
+                    },
+                    duration: 10000,
+                });
+            } else {
+                toast[data.type](data.message);
+            }
         });
     }, []);
 }

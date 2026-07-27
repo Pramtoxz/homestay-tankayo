@@ -104,9 +104,7 @@ class CheckoutController extends Controller
         Kamar::where('id_kamar', $checkin->reservasi->idkamar)
             ->update(['status_kamar' => 'tersedia']);
 
-        return redirect()->route('admin.checkout.index')
-            ->with('toast', ['type' => 'success', 'message' => 'Check-out berhasil.'])
-            ->with('faktur_url', route('admin.checkout.faktur', $idcheckout));
+        return redirect()->route('admin.checkout.faktur', $idcheckout);
     }
 
     public function show(Checkout $checkout): Response

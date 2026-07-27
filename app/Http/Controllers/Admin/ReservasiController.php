@@ -134,8 +134,14 @@ class ReservasiController extends Controller
         ]);
 
         return redirect()->route('admin.reservasi.index')
-            ->with('toast', ['type' => 'success', 'message' => 'Reservasi berhasil dibuat.'])
-            ->with('faktur_url', route('admin.reservasi.faktur', $idbooking));
+            ->with('toast', [
+                'type' => 'success',
+                'message' => 'Reservasi berhasil dibuat.',
+                'action' => [
+                    'label' => 'Cetak Faktur',
+                    'url' => route('admin.reservasi.faktur', $idbooking),
+                ],
+            ]);
     }
 
     public function show(Reservasi $reservasi): Response

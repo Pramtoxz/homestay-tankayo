@@ -1,7 +1,7 @@
 import { Head, router } from '@inertiajs/react';
 import type {ColumnDef} from '@tanstack/react-table';
 import { Plus, Eye, Pencil, Printer, Trash2 } from 'lucide-react';
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { DataTable, SortableHeader  } from '@/components/data-table';
 import type {PaginationMeta} from '@/components/data-table';
 import { Badge } from '@/components/ui/badge';
@@ -70,16 +70,6 @@ export default function ReservasiIndex({ reservasi, filters }: Props) {
 
     const handleCetakFaktur = useCallback((id: string) => {
         window.open(`/admin/reservasi/${id}/faktur`, '_blank');
-    }, []);
-
-    useEffect(() => {
-        return router.on('flash', (event) => {
-            const fakturUrl = (event as CustomEvent).detail?.flash?.faktur_url as string | undefined;
-
-            if (fakturUrl) {
-                window.open(fakturUrl, '_blank');
-            }
-        });
     }, []);
 
     const handlePageChange = useCallback((page: number) => {
