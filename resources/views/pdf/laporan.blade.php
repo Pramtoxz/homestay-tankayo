@@ -207,8 +207,8 @@
                     <th style="width: 12%; text-align: right;">Potongan/Denda</th>
                 @elseif($type === 'pendapatan')
                     <th style="width: 34%;">{{ $columnLabel ?? 'Periode' }}</th>
-                    <th style="width: 16%; text-align: center;">Check-in</th>
-                    <th style="width: 16%; text-align: center;">Check-out</th>
+                    <th style="width: 16%; text-align: center;">Total Reservasi</th>
+                    <th style="width: 16%; text-align: center;">Total Checkout</th>
                     <th style="width: 34%; text-align: right;">Jumlah</th>
                 @endif
             </tr>
@@ -264,7 +264,7 @@
                         <td class="text-right">Rp {{ number_format($row['potongan'], 0, ',', '.') }}</td>
                     @elseif($type === 'pendapatan')
                         <td>{{ $row['label'] }}</td>
-                        <td class="text-center">{{ $row['checkin'] }}</td>
+                        <td class="text-center">{{ $row['reservasi'] }}</td>
                         <td class="text-center">{{ $row['checkout'] }}</td>
                         <td class="text-right">Rp {{ number_format($row['jumlah'], 0, ',', '.') }}</td>
                     @endif
@@ -279,7 +279,7 @@
             <tfoot>
                 <tr style="font-weight: bold; border-top: 2px solid #111827;">
                     <td style="padding: 9px 8px; font-size: 10px;">Total</td>
-                    <td style="padding: 9px 8px; font-size: 10px; text-align: center;">{{ collect($data)->sum('checkin') }}</td>
+                    <td style="padding: 9px 8px; font-size: 10px; text-align: center;">{{ collect($data)->sum('reservasi') }}</td>
                     <td style="padding: 9px 8px; font-size: 10px; text-align: center;">{{ collect($data)->sum('checkout') }}</td>
                     <td style="padding: 9px 8px; font-size: 10px; text-align: right;">Rp
                         {{ number_format(collect($data)->sum('jumlah'), 0, ',', '.') }}</td>

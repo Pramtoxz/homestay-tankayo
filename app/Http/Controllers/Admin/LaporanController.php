@@ -385,7 +385,7 @@ class LaporanController extends Controller
             ->pluck('jumlah', 'tanggal')
             ->all();
 
-        $checkinCountRows = DB::table('checkin')
+        $reservasiCountRows = DB::table('reservasi')
             ->whereDate('created_at', '>=', $dari)
             ->whereDate('created_at', '<=', $sampai)
             ->select(
@@ -409,13 +409,13 @@ class LaporanController extends Controller
             ->pluck('jumlah', 'tanggal')
             ->all();
 
-        $allDates = array_unique(array_merge(array_keys($reservasiRows), array_keys($potonganRows), array_keys($checkinCountRows), array_keys($checkoutCountRows)));
+        $allDates = array_unique(array_merge(array_keys($reservasiRows), array_keys($potonganRows), array_keys($reservasiCountRows), array_keys($checkoutCountRows)));
         sort($allDates);
 
-        return array_map(function (string $tanggal) use ($reservasiRows, $potonganRows, $checkinCountRows, $checkoutCountRows) {
+        return array_map(function (string $tanggal) use ($reservasiRows, $potonganRows, $reservasiCountRows, $checkoutCountRows) {
             return [
                 'label' => Carbon::parse($tanggal)->translatedFormat('d F Y'),
-                'checkin' => (int) ($checkinCountRows[$tanggal] ?? 0),
+                'reservasi' => (int) ($reservasiCountRows[$tanggal] ?? 0),
                 'checkout' => (int) ($checkoutCountRows[$tanggal] ?? 0),
                 'jumlah' => (float) ($reservasiRows[$tanggal] ?? 0) + (float) ($potonganRows[$tanggal] ?? 0),
             ];
@@ -455,7 +455,7 @@ class LaporanController extends Controller
             ->get()
             ->keyBy('bulan');
 
-        $checkinCountRows = DB::table('checkin')
+        $reservasiCountRows = DB::table('reservasi')
             ->whereYear('created_at', $tahun)
             ->select(
                 DB::raw('MONTH(created_at) as bulan'),
@@ -480,13 +480,13 @@ class LaporanController extends Controller
         for ($m = 1; $m <= 12; $m++) {
             $reservasi = isset($reservasiRows[$m]) ? (float) $reservasiRows[$m]->jumlah : 0;
             $potongan = isset($potonganRows[$m]) ? (float) $potonganRows[$m]->jumlah : 0;
-            $checkin = isset($checkinCountRows[$m]) ? (int) $checkinCountRows[$m]->jumlah : 0;
-            $checkout = isset($checkoutCountRows[$m]) ? (int) $checkoutCountRows[$m]->jumlah : 0;
+            $reservasiCount = isset($reservasiCountRows[$m]) ? (int) $reservasiCountRows[$m]->jumlah : 0;
+            $checkoutCount = isset($checkoutCountRows[$m]) ? (int) $checkoutCountRows[$m]->jumlah : 0;
 
             $data[] = [
                 'label' => $bulanNames[$m],
-                'checkin' => $checkin,
-                'checkout' => $checkout,
+                'reservasi' => $reservasiCount,
+                'checkout' => $checkoutCount,
                 'jumlah' => $reservasi + $potongan,
             ];
         }
