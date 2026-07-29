@@ -16,6 +16,7 @@ class TipeFactory extends Factory
     {
         return [
             'nama_tipe' => fake()->unique()->word(),
+            'deskripsi' => fake('id_ID')->sentence(12),
             'aktif' => true,
         ];
     }

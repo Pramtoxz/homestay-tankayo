@@ -22,7 +22,6 @@ type KamarItem = {
     tipe_id: number;
     harga: number;
     fasilitas: string | null;
-    deskripsi: string | null;
 };
 
 const formatRupiah = (n: number) =>

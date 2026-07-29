@@ -19,29 +19,40 @@ export function Rooms({ tipes, user }: Props) {
 
     return (
         <section className="bg-muted/50">
-            <div className="mx-auto max-w-6xl px-4 sm:px-6 py-20 sm:py-28">
-                <div className="text-center mb-14">
+            <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
+                <div className="mb-14 text-center">
                     <span className="text-xs tracking-[0.2em] text-accent uppercase">
                         Akomodasi
                     </span>
-                    <h2 className="mt-3 font-display text-3xl sm:text-4xl font-medium text-foreground tracking-tight">
+                    <h2 className="mt-3 font-display text-3xl font-medium tracking-tight text-foreground sm:text-4xl">
                         Tipe Kamar
                     </h2>
-                    <p className="mt-3 text-sm text-muted-foreground max-w-lg mx-auto">
-                        Berbagai tipe kamar dengan balkon pribadi, langsung menghadap keindahan alam pegunungan.
+                    <p className="mx-auto mt-3 max-w-lg text-sm text-muted-foreground">
+                        Berbagai tipe kamar dengan balkon pribadi, langsung
+                        menghadap keindahan alam pegunungan.
                     </p>
                 </div>
 
                 <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
                     {tipesWithRooms.map((tipe) => {
-                        const hargaMin = Math.min(...tipe.kamar.map((k) => k.harga));
-                        const hargaMax = Math.max(...tipe.kamar.map((k) => k.harga));
-                        const semuaFasilitas = [...new Set(tipe.kamar.flatMap((k) => k.fasilitas?.split(', ') ?? []))];
+                        const hargaMin = Math.min(
+                            ...tipe.kamar.map((k) => k.harga),
+                        );
+                        const hargaMax = Math.max(
+                            ...tipe.kamar.map((k) => k.harga),
+                        );
+                        const semuaFasilitas = [
+                            ...new Set(
+                                tipe.kamar.flatMap(
+                                    (k) => k.fasilitas?.split(', ') ?? [],
+                                ),
+                            ),
+                        ];
 
                         return (
                             <Card
                                 key={tipe.id}
-                                className="group border-border/60 bg-card overflow-hidden hover:shadow-lg transition-all duration-200"
+                                className="group overflow-hidden border-border/60 bg-card transition-all duration-200 hover:shadow-lg"
                             >
                                 <div className="relative h-44 overflow-hidden bg-gradient-to-br from-primary/8 to-accent/8">
                                     {tipe.foto ? (
@@ -61,20 +72,22 @@ export function Rooms({ tipes, user }: Props) {
                                 </div>
 
                                 <CardContent className="p-5">
-                                    <h3 className="text-base font-semibold text-foreground mb-1">
+                                    <h3 className="mb-1 text-base font-semibold text-foreground">
                                         {tipe.nama_tipe}
                                     </h3>
 
                                     {semuaFasilitas.length > 0 && (
                                         <div className="mb-4 flex flex-wrap gap-1.5">
-                                            {semuaFasilitas.slice(0, 4).map((f) => (
-                                                <span
-                                                    key={f}
-                                                    className="inline-block rounded-full bg-muted px-2.5 py-0.5 text-[11px] text-muted-foreground"
-                                                >
-                                                    {f}
-                                                </span>
-                                            ))}
+                                            {semuaFasilitas
+                                                .slice(0, 4)
+                                                .map((f) => (
+                                                    <span
+                                                        key={f}
+                                                        className="inline-block rounded-full bg-muted px-2.5 py-0.5 text-[11px] text-muted-foreground"
+                                                    >
+                                                        {f}
+                                                    </span>
+                                                ))}
                                             {semuaFasilitas.length > 4 && (
                                                 <span className="inline-block rounded-full bg-muted px-2.5 py-0.5 text-[11px] text-muted-foreground">
                                                     +{semuaFasilitas.length - 4}
@@ -85,7 +98,7 @@ export function Rooms({ tipes, user }: Props) {
 
                                     <div className="flex items-end justify-between border-t border-border/60 pt-3">
                                         <div>
-                                            <p className="text-[11px] text-muted-foreground leading-none">
+                                            <p className="text-[11px] leading-none text-muted-foreground">
                                                 Mulai dari
                                             </p>
                                             <p className="text-lg font-bold text-primary tabular-nums">
@@ -100,11 +113,25 @@ export function Rooms({ tipes, user }: Props) {
                                         <Button
                                             asChild
                                             size="sm"
-                                            className="bg-accent hover:bg-accent/90 text-accent-foreground"
+                                            className="bg-accent text-accent-foreground hover:bg-accent/90"
                                         >
-                                            <Link href={bookingHref(user)}>Booking</Link>
+                                            <Link href={bookingHref(user)}>
+                                                Booking
+                                            </Link>
                                         </Button>
                                     </div>
+                                    {tipe.deskripsi && (
+                                    <div className="flex items-end justify-between border-t border-border/60 pt-3">
+                                        <div>
+                                            <p className="text-[11px] leading-none text-muted-foreground">
+                                                Deskripsi
+                                            </p>
+                                            <p className="mt-1 text-sm text-muted-foreground">
+                                                {tipe.deskripsi}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    )}
                                 </CardContent>
                             </Card>
                         );

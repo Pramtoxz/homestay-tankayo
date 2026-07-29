@@ -14,7 +14,7 @@ class WelcomeController extends Controller
         $tipes = Tipe::where('aktif', true)
             ->with(['kamar' => function ($q) {
                 $q->where('status_kamar', 'tersedia')
-                    ->select('id_kamar', 'nama', 'tipe_id', 'harga', 'fasilitas', 'deskripsi')
+                    ->select('id_kamar', 'nama', 'tipe_id', 'harga', 'fasilitas')
                     ->orderBy('harga');
             }])
             ->orderBy('nama_tipe')

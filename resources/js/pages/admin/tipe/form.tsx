@@ -11,6 +11,7 @@ type TipeData = {
     id: number;
     nama_tipe: string;
     foto: string | null;
+    deskripsi: string | null;
     aktif: boolean;
 };
 
@@ -24,6 +25,7 @@ export default function TipeForm({ tipe }: Props) {
 
     const [values, setValues] = useState({
         nama_tipe: tipe?.nama_tipe ?? '',
+        deskripsi: tipe?.deskripsi ?? '',
         aktif: tipe?.aktif?.toString() ?? '1',
     });
 
@@ -47,6 +49,7 @@ export default function TipeForm({ tipe }: Props) {
         e.preventDefault();
         const formData = new FormData();
         formData.append('nama_tipe', values.nama_tipe);
+        formData.append('deskripsi', values.deskripsi);
         formData.append('aktif', values.aktif);
 
         if (fotoFile) {
@@ -86,6 +89,18 @@ export default function TipeForm({ tipe }: Props) {
                                     placeholder="Nama tipe kamar"
                                 />
                                 {errors.nama_tipe && <p className="text-sm text-destructive">{errors.nama_tipe}</p>}
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="deskripsi">Deskripsi</Label>
+                                <Input
+                                    id="deskripsi"
+                                    name="deskripsi"
+                                    value={values.deskripsi}
+                                    onChange={handleChange}
+                                    placeholder="Deskripsi tipe kamar"
+                                />
+                                {errors.deskripsi && <p className="text-sm text-destructive">{errors.deskripsi}</p>}
                             </div>
 
                             <div className="space-y-2">

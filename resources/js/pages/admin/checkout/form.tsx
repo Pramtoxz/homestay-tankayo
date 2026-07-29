@@ -4,7 +4,14 @@ import { useMemo, useState } from 'react';
 import { SearchPickerDialog } from '@/components/search-picker-dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -18,12 +25,21 @@ type CheckinOption = {
         tglcheckin: string;
         totalbayar: number;
         tamu: { nama: string } | null;
-        kamar: { id_kamar: string; nama: string; tipe: { id: number; nama_tipe: string } | null; harga: number } | null;
+        kamar: {
+            id_kamar: string;
+            nama: string;
+            tipe: { id: number; nama_tipe: string } | null;
+            harga: number;
+        } | null;
     } | null;
 };
 
 const formatRupiah = (n: number) =>
-    new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
+    new Intl.NumberFormat('id-ID', {
+        style: 'currency',
+        currency: 'IDR',
+        minimumFractionDigits: 0,
+    }).format(n);
 
 export default function CheckoutForm() {
     const { errors } = usePage().props as { errors: Record<string, string> };
@@ -35,11 +51,14 @@ export default function CheckoutForm() {
         keterangan: '',
     });
 
-    const [selectedCheckin, setSelectedCheckin] = useState<CheckinOption | null>(null);
+    const [selectedCheckin, setSelectedCheckin] =
+        useState<CheckinOption | null>(null);
     const [checkinDialogOpen, setCheckinDialogOpen] = useState(false);
     const [confirmOpen, setConfirmOpen] = useState(false);
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const handleChange = (
+        e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+    ) => {
         setValues((prev) => ({ ...prev, [e.target.name]: e.target.value }));
     };
 
@@ -80,7 +99,10 @@ export default function CheckoutForm() {
     const handleConfirmSave = () => {
         setConfirmOpen(false);
 
-        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? '';
+        const csrfToken =
+            document
+                .querySelector('meta[name="csrf-token"]')
+                ?.getAttribute('content') ?? '';
         const form = document.createElement('form');
         form.method = 'POST';
         form.action = '/admin/checkout';
@@ -115,109 +137,160 @@ export default function CheckoutForm() {
                 <Card>
                     <CardHeader>
                         <div className="flex items-center gap-4">
-                            <Button variant="outline" size="icon" onClick={() => router.get('/admin/checkout')}>
+                            <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={() => router.get('/admin/checkout')}
+                            >
                                 <ArrowLeft className="h-4 w-4" />
                             </Button>
                             <CardTitle>Check-out Baru</CardTitle>
                         </div>
                     </CardHeader>
                     <CardContent>
-                        <form onSubmit={handleSubmit} className="mx-auto max-w-2xl space-y-4">
+                        <form
+                            onSubmit={handleSubmit}
+                            className="mx-auto max-w-2xl space-y-4"
+                        >
                             <div className="space-y-2">
                                 <Label>Check-in</Label>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
-                                        <Label htmlFor="ci_idcheckin">ID Check-in</Label>
+                                        <Label htmlFor="ci_idcheckin">
+                                            ID Check-in
+                                        </Label>
                                         <Input
                                             id="ci_idcheckin"
                                             readOnly
                                             placeholder="Belum dipilih"
-                                            value={selectedCheckin?.idcheckin ?? ''}
+                                            value={
+                                                selectedCheckin?.idcheckin ?? ''
+                                            }
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label htmlFor="ci_tamu">Nama Tamu</Label>
+                                        <Label htmlFor="ci_tamu">
+                                            Nama Tamu
+                                        </Label>
                                         <div className="flex items-center gap-2">
                                             <Input
                                                 id="ci_tamu"
                                                 readOnly
                                                 placeholder="Belum dipilih"
-                                                value={selectedCheckin?.reservasi?.tamu?.nama ?? ''}
+                                                value={
+                                                    selectedCheckin?.reservasi
+                                                        ?.tamu?.nama ?? ''
+                                                }
                                                 className="flex-1"
                                             />
                                             <Button
                                                 type="button"
                                                 variant="outline"
                                                 size="sm"
-                                                onClick={() => setCheckinDialogOpen(true)}
+                                                onClick={() =>
+                                                    setCheckinDialogOpen(true)
+                                                }
                                             >
                                                 Pilih Check-in
                                             </Button>
                                         </div>
                                     </div>
                                     <div className="space-y-2">
-                                        <Label htmlFor="ci_kode_kamar">Kode Kamar</Label>
+                                        <Label htmlFor="ci_kode_kamar">
+                                            Kode Kamar
+                                        </Label>
                                         <Input
                                             id="ci_kode_kamar"
                                             readOnly
                                             placeholder="Belum dipilih"
-                                            value={selectedCheckin?.reservasi?.kamar?.id_kamar ?? ''}
+                                            value={
+                                                selectedCheckin?.reservasi
+                                                    ?.kamar?.id_kamar ?? ''
+                                            }
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label htmlFor="ci_tipe_kamar">Tipe Kamar</Label>
+                                        <Label htmlFor="ci_tipe_kamar">
+                                            Tipe Kamar
+                                        </Label>
                                         <Input
                                             id="ci_tipe_kamar"
                                             readOnly
                                             placeholder="Belum dipilih"
-                                            value={selectedCheckin?.reservasi?.kamar?.tipe?.nama_tipe ?? ''}
+                                            value={
+                                                selectedCheckin?.reservasi
+                                                    ?.kamar?.tipe?.nama_tipe ??
+                                                ''
+                                            }
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label htmlFor="ci_harga_kamar">Harga Kamar</Label>
+                                        <Label htmlFor="ci_harga_kamar">
+                                            Harga Kamar
+                                        </Label>
                                         <Input
                                             id="ci_harga_kamar"
                                             readOnly
                                             placeholder="Belum dipilih"
                                             value={
-                                                selectedCheckin?.reservasi?.kamar
+                                                selectedCheckin?.reservasi
+                                                    ?.kamar
                                                     ? `${formatRupiah(selectedCheckin.reservasi.kamar.harga)}/malam`
                                                     : ''
                                             }
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label htmlFor="ci_checkin">Tanggal Check-in</Label>
+                                        <Label htmlFor="ci_checkin">
+                                            Tanggal Check-in
+                                        </Label>
                                         <Input
                                             id="ci_checkin"
                                             readOnly
                                             placeholder="Belum dipilih"
                                             value={
                                                 selectedCheckin?.reservasi
-                                                    ? formatTanggal(selectedCheckin.reservasi.tglcheckin)
+                                                    ? formatTanggal(
+                                                          selectedCheckin
+                                                              .reservasi
+                                                              .tglcheckin,
+                                                      )
                                                     : ''
                                             }
                                         />
                                     </div>
                                     <div className="col-span-2 space-y-2">
-                                        <Label htmlFor="ci_total">Total Reservasi Yang Sudah Dibayar Lunas</Label>
+                                        <Label htmlFor="ci_total">
+                                            Total Reservasi Yang Sudah Dibayar
+                                            Lunas
+                                        </Label>
                                         <Input
                                             id="ci_total"
                                             readOnly
                                             placeholder="Belum dipilih"
                                             value={
                                                 selectedCheckin?.reservasi
-                                                    ? formatRupiah(selectedCheckin.reservasi.totalbayar)
+                                                    ? formatRupiah(
+                                                          selectedCheckin
+                                                              .reservasi
+                                                              .totalbayar,
+                                                      )
                                                     : ''
                                             }
                                         />
                                     </div>
                                 </div>
-                                {errors.idcheckin && <p className="text-sm text-destructive">{errors.idcheckin}</p>}
+                                {errors.idcheckin && (
+                                    <p className="text-sm text-destructive">
+                                        {errors.idcheckin}
+                                    </p>
+                                )}
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="tglcheckout">Tanggal Check-out</Label>
+                                <Label htmlFor="tglcheckout">
+                                    Tanggal Check-out
+                                </Label>
                                 <Input
                                     id="tglcheckout"
                                     name="tglcheckout"
@@ -226,7 +299,11 @@ export default function CheckoutForm() {
                                     value={values.tglcheckout}
                                     onChange={handleChange}
                                 />
-                                {errors.tglcheckout && <p className="text-sm text-destructive">{errors.tglcheckout}</p>}
+                                {errors.tglcheckout && (
+                                    <p className="text-sm text-destructive">
+                                        {errors.tglcheckout}
+                                    </p>
+                                )}
                             </div>
 
                             <div className="space-y-2">
@@ -235,12 +312,18 @@ export default function CheckoutForm() {
                                     id="deposit"
                                     readOnly
                                     placeholder="Belum dipilih"
-                                    value={selectedCheckin ? formatRupiah(selectedCheckin.deposit) : ''}
+                                    value={
+                                        selectedCheckin
+                                            ? formatRupiah(
+                                                  selectedCheckin.deposit,
+                                              )
+                                            : ''
+                                    }
                                 />
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="potongan">Potongan</Label>
+                                <Label htmlFor="potongan">Potongan/Denda</Label>
                                 <Input
                                     id="potongan"
                                     name="potongan"
@@ -249,7 +332,11 @@ export default function CheckoutForm() {
                                     onChange={handleChange}
                                     placeholder="0"
                                 />
-                                {errors.potongan && <p className="text-sm text-destructive">{errors.potongan}</p>}
+                                {errors.potongan && (
+                                    <p className="text-sm text-destructive">
+                                        {errors.potongan}
+                                    </p>
+                                )}
                             </div>
 
                             <div className="space-y-2">
@@ -261,47 +348,90 @@ export default function CheckoutForm() {
                                     onChange={handleChange}
                                     placeholder="Keterangan (opsional)"
                                 />
-                                {errors.keterangan && <p className="text-sm text-destructive">{errors.keterangan}</p>}
+                                {errors.keterangan && (
+                                    <p className="text-sm text-destructive">
+                                        {errors.keterangan}
+                                    </p>
+                                )}
                             </div>
 
                             {selectedCheckin && (
                                 <div className="space-y-3">
-                                    <div className={`rounded-md p-4 space-y-2 ${kekurangan > 0 ? 'border-2 border-red-300 bg-red-50' : deposit > potongan && potongan > 0 ? 'border-2 border-green-300 bg-green-50' : 'border bg-card'}`}>
+                                    <div
+                                        className={`space-y-2 rounded-md p-4 ${kekurangan > 0 ? 'border-2 border-red-300 bg-red-50' : deposit > potongan && potongan > 0 ? 'border-2 border-green-300 bg-green-50' : 'border bg-card'}`}
+                                    >
                                         {potongan > 0 ? (
                                             <>
                                                 <div className="flex justify-between text-sm">
-                                                    <span>Total Reservasi Yang Sudah Dibayar Lunas Di Muka</span>
-                                                    <span>{formatRupiah(totalbayarReservasi)}</span>
+                                                    <span>
+                                                        Total Reservasi Yang
+                                                        Sudah Dibayar Lunas Di
+                                                        Muka
+                                                    </span>
+                                                    <span>
+                                                        {formatRupiah(
+                                                            totalbayarReservasi,
+                                                        )}
+                                                    </span>
                                                 </div>
-                                                <div className="flex justify-between text-sm border-t pt-2">
+                                                <div className="flex justify-between border-t pt-2 text-sm">
                                                     <span>Potongan/Denda</span>
-                                                    <span>{formatRupiah(potongan)}</span>
+                                                    <span>
+                                                        {formatRupiah(potongan)}
+                                                    </span>
                                                 </div>
-                                                <div className="flex justify-between text-sm border-t pt-2 font-semibold">
+                                                <div className="flex justify-between border-t pt-2 text-sm font-semibold">
                                                     <span>Grand Total</span>
-                                                    <span>{formatRupiah(grandTotal)}</span>
+                                                    <span>
+                                                        {formatRupiah(
+                                                            grandTotal,
+                                                        )}
+                                                    </span>
                                                 </div>
-                                                <div className="flex justify-between text-sm border-t pt-2">
-                                                    <span>Deposit Yang Sudah Masuk</span>
-                                                    <span>{formatRupiah(deposit)}</span>
+                                                <div className="flex justify-between border-t pt-2 text-sm">
+                                                    <span>
+                                                        Deposit Yang Sudah Masuk
+                                                    </span>
+                                                    <span>
+                                                        {formatRupiah(deposit)}
+                                                    </span>
                                                 </div>
                                                 {kekurangan > 0 && (
                                                     <div className="flex justify-between border-t pt-2 text-base font-bold text-red-700">
-                                                        <span>Kekurangan Yang Harus Dibayar Tamu</span>
-                                                        <span>{formatRupiah(kekurangan)}</span>
+                                                        <span>
+                                                            Kekurangan Yang
+                                                            Harus Dibayar Tamu
+                                                        </span>
+                                                        <span>
+                                                            {formatRupiah(
+                                                                kekurangan,
+                                                            )}
+                                                        </span>
                                                     </div>
                                                 )}
                                                 {deposit > potongan && (
                                                     <div className="flex justify-between border-t pt-2 text-base font-bold text-green-700">
-                                                        <span>Deposit Yang Harus Dikembalikan Ke Tamu</span>
-                                                        <span>{formatRupiah(deposit - potongan)}</span>
+                                                        <span>
+                                                            Deposit Yang Harus
+                                                            Dikembalikan Ke Tamu
+                                                        </span>
+                                                        <span>
+                                                            {formatRupiah(
+                                                                deposit -
+                                                                    potongan,
+                                                            )}
+                                                        </span>
                                                     </div>
                                                 )}
                                             </>
                                         ) : (
                                             <div className="flex justify-between text-sm">
                                                 <span>Total Reservasi</span>
-                                                <span className="font-semibold">{formatRupiah(totalbayarReservasi)}</span>
+                                                <span className="font-semibold">
+                                                    {formatRupiah(
+                                                        totalbayarReservasi,
+                                                    )}
+                                                </span>
                                             </div>
                                         )}
                                     </div>
@@ -313,7 +443,13 @@ export default function CheckoutForm() {
                                     <Save className="h-4 w-4" />
                                     Proses Check-out
                                 </Button>
-                                <Button type="button" variant="outline" onClick={() => router.get('/admin/checkout')}>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() =>
+                                        router.get('/admin/checkout')
+                                    }
+                                >
                                     Batal
                                 </Button>
                             </div>
@@ -330,7 +466,12 @@ export default function CheckoutForm() {
                 fetchUrl="/admin/checkout-search/checkin"
                 columns={['ID Check-in', 'Booking', 'Tamu', 'Kamar']}
                 getRowKey={(c) => c.idcheckin}
-                renderRow={(c) => [c.idcheckin, c.reservasi?.idbooking ?? '-', c.reservasi?.tamu?.nama ?? '-', c.reservasi?.kamar?.nama ?? '-']}
+                renderRow={(c) => [
+                    c.idcheckin,
+                    c.reservasi?.idbooking ?? '-',
+                    c.reservasi?.tamu?.nama ?? '-',
+                    c.reservasi?.kamar?.nama ?? '-',
+                ]}
                 onSelect={handleSelectCheckin}
                 emptyMessage="Tidak ada tamu yang siap check-out."
             />
@@ -343,12 +484,13 @@ export default function CheckoutForm() {
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setConfirmOpen(false)}>
+                        <Button
+                            variant="outline"
+                            onClick={() => setConfirmOpen(false)}
+                        >
                             Batal
                         </Button>
-                        <Button onClick={handleConfirmSave}>
-                            Simpan
-                        </Button>
+                        <Button onClick={handleConfirmSave}>Simpan</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

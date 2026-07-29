@@ -58,7 +58,6 @@ class KamarController extends Controller
             'tipe_id' => 'required|exists:tipe,id',
             'harga' => 'required|numeric|min:0',
             'fasilitas' => 'nullable|string',
-            'deskripsi' => 'nullable|string',
             'status_kamar' => 'required|in:tersedia,tidak tersedia',
         ]);
 
@@ -85,7 +84,6 @@ class KamarController extends Controller
             'tipe_id' => 'required|exists:tipe,id',
             'harga' => 'required|numeric|min:0',
             'fasilitas' => 'nullable|string',
-            'deskripsi' => 'nullable|string',
             'status_kamar' => 'required|in:tersedia,tidak tersedia',
         ]);
 
