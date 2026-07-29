@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="utf-8">
     <title>Faktur Check-out {{ $checkout->idcheckout }}</title>
@@ -199,6 +200,7 @@
         }
     </style>
 </head>
+
 <body>
     <table class="doc-header" style="width: 100%;">
         <tr>
@@ -257,44 +259,55 @@
             </tr>
         </thead>
         <tbody>
-            <tr>
-                <td>Total Reservasi Yang Sudah Dibayar Lunas Di Muka</td>
-                <td style="text-align: right;">Rp {{ number_format($reservasi->totalbayar ?? 0, 0, ',', '.') }}</td>
-            </tr>
-            <tr class="deduction">
-                <td>Potongan/Denda</td>
-                <td style="text-align: right;">- Rp {{ number_format($checkout->potongan, 0, ',', '.') }}</td>
-            </tr>
-            <tr>
-                <td style="font-weight: bold;">Grand Total</td>
-                <td style="text-align: right; font-weight: bold;">Rp {{ number_format($checkout->grandtotal, 0, ',', '.') }}</td>
-            </tr>
-            <tr>
-                <td>Deposit Yang Sudah Masuk</td>
-                <td style="text-align: right;">Rp {{ number_format($checkout->checkin->deposit ?? 0, 0, ',', '.') }}</td>
-            </tr>
-            @php
-                $depositVal = $checkout->checkin->deposit ?? 0;
-                $potonganVal = $checkout->potongan;
-                $kekuranganVal = $potonganVal > $depositVal ? $potonganVal - $depositVal : 0;
-            @endphp
-            @if ($kekuranganVal > 0)
-                <tr class="kekurangan">
-                    <td>Kekurangan Yang Harus Dibayar Tamu</td>
-                    <td style="text-align: right;">Rp {{ number_format($kekuranganVal, 0, ',', '.') }}</td>
+            @if ($checkout->potongan > 0)
+                @php
+                    $depositVal = $checkout->checkin->deposit ?? 0;
+                    $potonganVal = $checkout->potongan;
+                    $grandtotalVal = ($reservasi->totalbayar ?? 0) + $potonganVal;
+                    $kekuranganVal = $potonganVal > $depositVal ? $potonganVal - $depositVal : 0;
+                @endphp
+                <tr>
+                    <td>Total Reservasi Yang Sudah Dibayar Lunas Di Muka</td>
+                    <td style="text-align: right;">Rp {{ number_format($reservasi->totalbayar ?? 0, 0, ',', '.') }}</td>
                 </tr>
-            @endif
-            @if ($depositVal > $potonganVal)
-                <tr class="kembalian">
-                    <td>Deposit Yang Harus Dikembalikan Ke Tamu</td>
-                    <td style="text-align: right;">Rp {{ number_format($depositVal - $potonganVal, 0, ',', '.') }}</td>
+                <tr class="deduction">
+                    <td>Potongan/Denda</td>
+                    <td style="text-align: right;">Rp {{ number_format($potonganVal, 0, ',', '.') }}</td>
+                </tr>
+                <tr>
+                    <td style="font-weight: bold;">Grand Total</td>
+                    <td style="text-align: right; font-weight: bold;">Rp
+                        {{ number_format($grandtotalVal, 0, ',', '.') }}</td>
+                </tr>
+                <tr>
+                    <td>Deposit Yang Sudah Masuk</td>
+                    <td style="text-align: right;">Rp {{ number_format($depositVal, 0, ',', '.') }}</td>
+                </tr>
+                @if ($kekuranganVal > 0)
+                    <tr class="kekurangan">
+                        <td>Kekurangan Yang Harus Dibayar Tamu</td>
+                        <td style="text-align: right;">Rp {{ number_format($kekuranganVal, 0, ',', '.') }}</td>
+                    </tr>
+                @endif
+                @if ($depositVal > $potonganVal)
+                    <tr class="kembalian">
+                        <td>Deposit Yang Harus Dikembalikan Ke Tamu</td>
+                        <td style="text-align: right;">Rp {{ number_format($depositVal - $potonganVal, 0, ',', '.') }}
+                        </td>
+                    </tr>
+                @endif
+            @else
+                <tr>
+                    <td>Total Reservasi</td>
+                    <td style="text-align: right;">Rp {{ number_format($reservasi->totalbayar ?? 0, 0, ',', '.') }}
+                    </td>
                 </tr>
             @endif
         </tbody>
         <tfoot>
             <tr>
-                <td style="text-align: right;">TOTAL PEMBAYARAN</td>
-                <td style="text-align: right;">Rp {{ number_format($checkout->grandtotal, 0, ',', '.') }}</td>
+                <td style="text-align: right;"></td>
+                <td style="text-align: right;"></td>
             </tr>
         </tfoot>
     </table>
@@ -321,4 +334,5 @@
         Faktur ini dicetak otomatis oleh sistem pada {{ $tglCetak }} dan sah tanpa tanda tangan basah.
     </div>
 </body>
+
 </html>

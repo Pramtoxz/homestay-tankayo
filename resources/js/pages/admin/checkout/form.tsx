@@ -59,7 +59,7 @@ export default function CheckoutForm() {
     const potongan = Number(values.potongan) || 0;
 
     const grandTotal = useMemo(() => {
-        return Math.max(totalbayarReservasi - potongan, 0);
+        return totalbayarReservasi + potongan;
     }, [totalbayarReservasi, potongan]);
 
     const kekurangan = useMemo(() => {
@@ -266,36 +266,42 @@ export default function CheckoutForm() {
 
                             {selectedCheckin && (
                                 <div className="space-y-3">
-                                    <div className="rounded-md border border-dashed bg-muted/50 p-4">
-                                        <div className="flex justify-between text-sm text-muted-foreground">
-                                            <span>Total Reservasi Yang Sudah Dibayar Lunas Di Muka</span>
-                                            <span className="font-semibold text-foreground">{formatRupiah(totalbayarReservasi)}</span>
-                                        </div>
-                                    </div>
-
                                     <div className={`rounded-md p-4 space-y-2 ${kekurangan > 0 ? 'border-2 border-red-300 bg-red-50' : deposit > potongan && potongan > 0 ? 'border-2 border-green-300 bg-green-50' : 'border bg-card'}`}>
-                                        <div className="flex justify-between text-sm">
-                                            <span>Potongan</span>
-                                            <span className="text-destructive">- {formatRupiah(potongan)}</span>
-                                        </div>
-                                        <div className="flex justify-between text-sm border-t pt-2">
-                                            <span>Grand Total</span>
-                                            <span>{formatRupiah(grandTotal)}</span>
-                                        </div>
-                                        <div className="flex justify-between text-sm border-t pt-2">
-                                            <span>Deposit Yang Sudah Masuk</span>
-                                            <span>{formatRupiah(deposit)}</span>
-                                        </div>
-                                        {kekurangan > 0 && (
-                                            <div className="flex justify-between border-t pt-2 text-base font-bold text-red-700">
-                                                <span>Kekurangan Yang Harus Dibayar Tamu</span>
-                                                <span>{formatRupiah(kekurangan)}</span>
-                                            </div>
-                                        )}
-                                        {deposit > potongan && potongan > 0 && (
-                                            <div className="flex justify-between border-t pt-2 text-base font-bold text-green-700">
-                                                <span>Deposit Yang Harus Dikembalikan Ke Tamu</span>
-                                                <span>{formatRupiah(deposit - potongan)}</span>
+                                        {potongan > 0 ? (
+                                            <>
+                                                <div className="flex justify-between text-sm">
+                                                    <span>Total Reservasi Yang Sudah Dibayar Lunas Di Muka</span>
+                                                    <span>{formatRupiah(totalbayarReservasi)}</span>
+                                                </div>
+                                                <div className="flex justify-between text-sm border-t pt-2">
+                                                    <span>Potongan/Denda</span>
+                                                    <span>{formatRupiah(potongan)}</span>
+                                                </div>
+                                                <div className="flex justify-between text-sm border-t pt-2 font-semibold">
+                                                    <span>Grand Total</span>
+                                                    <span>{formatRupiah(grandTotal)}</span>
+                                                </div>
+                                                <div className="flex justify-between text-sm border-t pt-2">
+                                                    <span>Deposit Yang Sudah Masuk</span>
+                                                    <span>{formatRupiah(deposit)}</span>
+                                                </div>
+                                                {kekurangan > 0 && (
+                                                    <div className="flex justify-between border-t pt-2 text-base font-bold text-red-700">
+                                                        <span>Kekurangan Yang Harus Dibayar Tamu</span>
+                                                        <span>{formatRupiah(kekurangan)}</span>
+                                                    </div>
+                                                )}
+                                                {deposit > potongan && (
+                                                    <div className="flex justify-between border-t pt-2 text-base font-bold text-green-700">
+                                                        <span>Deposit Yang Harus Dikembalikan Ke Tamu</span>
+                                                        <span>{formatRupiah(deposit - potongan)}</span>
+                                                    </div>
+                                                )}
+                                            </>
+                                        ) : (
+                                            <div className="flex justify-between text-sm">
+                                                <span>Total Reservasi</span>
+                                                <span className="font-semibold">{formatRupiah(totalbayarReservasi)}</span>
                                             </div>
                                         )}
                                     </div>

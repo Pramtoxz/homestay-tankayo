@@ -111,44 +111,51 @@ export default function CheckoutShow({ checkout }: Props) {
                         <Separator />
 
                         <div className="space-y-3">
-                            <div className="rounded-md border border-dashed bg-muted/50 p-4">
-                                <div className="flex justify-between text-sm text-muted-foreground">
-                                    <span>Total Reservasi Yang Sudah Dibayar Lunas Di Muka</span>
-                                    <span className="font-semibold text-foreground">{formatRupiah(r?.totalbayar ?? 0)}</span>
-                                </div>
-                            </div>
-
                             {(() => {
                                 const deposit = checkout.checkin?.deposit ?? 0;
                                 const potongan = checkout.potongan;
+                                const grandtotal = (r?.totalbayar ?? 0) + potongan;
                                 const kekurangan = potongan > deposit ? potongan - deposit : 0;
                                 const isKekurangan = kekurangan > 0;
                                 const isKembalian = deposit > potongan && potongan > 0;
 
                                 return (
                                     <div className={`rounded-md p-4 space-y-2 ${isKekurangan ? 'border-2 border-red-300 bg-red-50' : isKembalian ? 'border-2 border-green-300 bg-green-50' : 'border bg-card'}`}>
-                                        <div className="flex justify-between text-sm">
-                                            <span>Potongan/Denda</span>
-                                            <span className="text-destructive">- {formatRupiah(potongan)}</span>
-                                        </div>
-                                        <div className="flex justify-between text-sm border-t pt-2">
-                                            <span>Grand Total</span>
-                                            <span>{formatRupiah(checkout.grandtotal)}</span>
-                                        </div>
-                                        <div className="flex justify-between text-sm border-t pt-2">
-                                            <span>Deposit Yang Sudah Masuk</span>
-                                            <span>{formatRupiah(deposit)}</span>
-                                        </div>
-                                        {isKekurangan && (
-                                            <div className="flex justify-between border-t pt-2 text-base font-bold text-red-700">
-                                                <span>Kekurangan Yang Harus Dibayar Tamu</span>
-                                                <span>{formatRupiah(kekurangan)}</span>
-                                            </div>
-                                        )}
-                                        {isKembalian && (
-                                            <div className="flex justify-between border-t pt-2 text-base font-bold text-green-700">
-                                                <span>Deposit Yang Harus Dikembalikan Ke Tamu</span>
-                                                <span>{formatRupiah(deposit - potongan)}</span>
+                                        {potongan > 0 ? (
+                                            <>
+                                                <div className="flex justify-between text-sm">
+                                                    <span>Total Reservasi Yang Sudah Dibayar Lunas Di Muka</span>
+                                                    <span>{formatRupiah(r?.totalbayar ?? 0)}</span>
+                                                </div>
+                                                <div className="flex justify-between text-sm border-t pt-2">
+                                                    <span>Potongan/Denda</span>
+                                                    <span>{formatRupiah(potongan)}</span>
+                                                </div>
+                                                <div className="flex justify-between text-sm border-t pt-2 font-semibold">
+                                                    <span>Grand Total</span>
+                                                    <span>{formatRupiah(grandtotal)}</span>
+                                                </div>
+                                                <div className="flex justify-between text-sm border-t pt-2">
+                                                    <span>Deposit Yang Sudah Masuk</span>
+                                                    <span>{formatRupiah(deposit)}</span>
+                                                </div>
+                                                {isKekurangan && (
+                                                    <div className="flex justify-between border-t pt-2 text-base font-bold text-red-700">
+                                                        <span>Kekurangan Yang Harus Dibayar Tamu</span>
+                                                        <span>{formatRupiah(kekurangan)}</span>
+                                                    </div>
+                                                )}
+                                                {isKembalian && (
+                                                    <div className="flex justify-between border-t pt-2 text-base font-bold text-green-700">
+                                                        <span>Deposit Yang Harus Dikembalikan Ke Tamu</span>
+                                                        <span>{formatRupiah(deposit - potongan)}</span>
+                                                    </div>
+                                                )}
+                                            </>
+                                        ) : (
+                                            <div className="flex justify-between text-sm">
+                                                <span>Total Reservasi</span>
+                                                <span className="font-semibold">{formatRupiah(r?.totalbayar ?? 0)}</span>
                                             </div>
                                         )}
                                     </div>

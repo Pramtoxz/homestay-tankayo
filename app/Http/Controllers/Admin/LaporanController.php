@@ -290,7 +290,7 @@ class LaporanController extends Controller
         return Reservasi::with(['tamu', 'kamar'])
             ->whereDate('created_at', '>=', $dari)
             ->whereDate('created_at', '<=', $sampai)
-            ->latest()
+            ->oldest()
             ->get()
             ->map(fn (Reservasi $r) => [
                 'idbooking' => $r->idbooking,
@@ -315,7 +315,7 @@ class LaporanController extends Controller
                 $query->whereDate('tglcheckin', '>=', $dari)
                     ->whereDate('tglcheckin', '<=', $sampai);
             })
-            ->latest()
+            ->oldest()
             ->get()
             ->map(fn (Checkin $c) => [
                 'idcheckin' => $c->idcheckin,
@@ -338,7 +338,7 @@ class LaporanController extends Controller
         return Checkout::with(['checkin.reservasi.tamu', 'checkin.reservasi.kamar'])
             ->whereDate('tglcheckout', '>=', $dari)
             ->whereDate('tglcheckout', '<=', $sampai)
-            ->latest()
+            ->oldest()
             ->get()
             ->map(fn (Checkout $co) => [
                 'idcheckout' => $co->idcheckout,
@@ -359,7 +359,7 @@ class LaporanController extends Controller
      */
     private function getPendapatanByRange(string $dari, string $sampai): array
     {
-        return DB::table('reservasi')
+        $reservasiRows = DB::table('reservasi')
             ->whereIn('status', ['diterima', 'checkin', 'selesai'])
             ->whereDate('created_at', '>=', $dari)
             ->whereDate('created_at', '<=', $sampai)
@@ -368,14 +368,58 @@ class LaporanController extends Controller
                 DB::raw('SUM(totalbayar) as jumlah'),
             )
             ->groupBy(DB::raw('DATE(created_at)'))
-            ->orderBy('tanggal')
             ->get()
-            ->map(fn ($row) => [
-                'label' => Carbon::parse($row->tanggal)->translatedFormat('d F Y'),
-                'jumlah' => (float) $row->jumlah,
-            ])
-            ->values()
+            ->pluck('jumlah', 'tanggal')
             ->all();
+
+        $potonganRows = DB::table('checkout')
+            ->whereDate('tglcheckout', '>=', $dari)
+            ->whereDate('tglcheckout', '<=', $sampai)
+            ->where('potongan', '>', 0)
+            ->select(
+                DB::raw('DATE(tglcheckout) as tanggal'),
+                DB::raw('SUM(potongan) as jumlah'),
+            )
+            ->groupBy(DB::raw('DATE(tglcheckout)'))
+            ->get()
+            ->pluck('jumlah', 'tanggal')
+            ->all();
+
+        $checkinCountRows = DB::table('checkin')
+            ->whereDate('created_at', '>=', $dari)
+            ->whereDate('created_at', '<=', $sampai)
+            ->select(
+                DB::raw('DATE(created_at) as tanggal'),
+                DB::raw('COUNT(*) as jumlah'),
+            )
+            ->groupBy(DB::raw('DATE(created_at)'))
+            ->get()
+            ->pluck('jumlah', 'tanggal')
+            ->all();
+
+        $checkoutCountRows = DB::table('checkout')
+            ->whereDate('tglcheckout', '>=', $dari)
+            ->whereDate('tglcheckout', '<=', $sampai)
+            ->select(
+                DB::raw('DATE(tglcheckout) as tanggal'),
+                DB::raw('COUNT(*) as jumlah'),
+            )
+            ->groupBy(DB::raw('DATE(tglcheckout)'))
+            ->get()
+            ->pluck('jumlah', 'tanggal')
+            ->all();
+
+        $allDates = array_unique(array_merge(array_keys($reservasiRows), array_keys($potonganRows), array_keys($checkinCountRows), array_keys($checkoutCountRows)));
+        sort($allDates);
+
+        return array_map(function (string $tanggal) use ($reservasiRows, $potonganRows, $checkinCountRows, $checkoutCountRows) {
+            return [
+                'label' => Carbon::parse($tanggal)->translatedFormat('d F Y'),
+                'checkin' => (int) ($checkinCountRows[$tanggal] ?? 0),
+                'checkout' => (int) ($checkoutCountRows[$tanggal] ?? 0),
+                'jumlah' => (float) ($reservasiRows[$tanggal] ?? 0) + (float) ($potonganRows[$tanggal] ?? 0),
+            ];
+        }, $allDates);
     }
 
     /**
@@ -389,7 +433,7 @@ class LaporanController extends Controller
             9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember',
         ];
 
-        $rows = DB::table('reservasi')
+        $reservasiRows = DB::table('reservasi')
             ->whereIn('status', ['diterima', 'checkin', 'selesai'])
             ->whereYear('created_at', $tahun)
             ->select(
@@ -397,16 +441,53 @@ class LaporanController extends Controller
                 DB::raw('SUM(totalbayar) as jumlah'),
             )
             ->groupBy(DB::raw('MONTH(created_at)'))
-            ->orderBy('bulan')
+            ->get()
+            ->keyBy('bulan');
+
+        $potonganRows = DB::table('checkout')
+            ->whereYear('tglcheckout', $tahun)
+            ->where('potongan', '>', 0)
+            ->select(
+                DB::raw('MONTH(tglcheckout) as bulan'),
+                DB::raw('SUM(potongan) as jumlah'),
+            )
+            ->groupBy(DB::raw('MONTH(tglcheckout)'))
+            ->get()
+            ->keyBy('bulan');
+
+        $checkinCountRows = DB::table('checkin')
+            ->whereYear('created_at', $tahun)
+            ->select(
+                DB::raw('MONTH(created_at) as bulan'),
+                DB::raw('COUNT(*) as jumlah'),
+            )
+            ->groupBy(DB::raw('MONTH(created_at)'))
+            ->get()
+            ->keyBy('bulan');
+
+        $checkoutCountRows = DB::table('checkout')
+            ->whereYear('tglcheckout', $tahun)
+            ->select(
+                DB::raw('MONTH(tglcheckout) as bulan'),
+                DB::raw('COUNT(*) as jumlah'),
+            )
+            ->groupBy(DB::raw('MONTH(tglcheckout)'))
             ->get()
             ->keyBy('bulan');
 
         $data = [];
 
         for ($m = 1; $m <= 12; $m++) {
+            $reservasi = isset($reservasiRows[$m]) ? (float) $reservasiRows[$m]->jumlah : 0;
+            $potongan = isset($potonganRows[$m]) ? (float) $potonganRows[$m]->jumlah : 0;
+            $checkin = isset($checkinCountRows[$m]) ? (int) $checkinCountRows[$m]->jumlah : 0;
+            $checkout = isset($checkoutCountRows[$m]) ? (int) $checkoutCountRows[$m]->jumlah : 0;
+
             $data[] = [
                 'label' => $bulanNames[$m],
-                'jumlah' => isset($rows[$m]) ? (float) $rows[$m]->jumlah : 0,
+                'checkin' => $checkin,
+                'checkout' => $checkout,
+                'jumlah' => $reservasi + $potongan,
             ];
         }
 

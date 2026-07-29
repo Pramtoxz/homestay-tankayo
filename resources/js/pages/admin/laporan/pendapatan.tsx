@@ -10,6 +10,8 @@ type FilterMode = 'tanggal' | 'bulan' | 'tahun';
 
 type PendapatanRow = {
     label: string;
+    checkin: number;
+    checkout: number;
     jumlah: number;
 };
 
@@ -70,6 +72,8 @@ export default function LaporanPendapatan({ mode, data, loaded, filters }: Props
     };
 
     const total = data.reduce((sum, row) => sum + row.jumlah, 0);
+    const totalCheckin = data.reduce((sum, row) => sum + row.checkin, 0);
+    const totalCheckout = data.reduce((sum, row) => sum + row.checkout, 0);
 
     const columnLabel = filterMode === 'tahun' ? 'Bulan' : 'Tanggal';
 
@@ -195,6 +199,8 @@ export default function LaporanPendapatan({ mode, data, loaded, filters }: Props
                                     <thead>
                                         <tr className="border-b">
                                             <th className="px-4 py-3 text-left font-medium">{columnLabel}</th>
+                                            <th className="px-4 py-3 text-center font-medium">Check-in</th>
+                                            <th className="px-4 py-3 text-center font-medium">Check-out</th>
                                             <th className="px-4 py-3 text-right font-medium">Jumlah</th>
                                         </tr>
                                     </thead>
@@ -202,6 +208,8 @@ export default function LaporanPendapatan({ mode, data, loaded, filters }: Props
                                         {data.map((r, i) => (
                                             <tr key={i} className="border-b hover:bg-muted/50">
                                                 <td className="px-4 py-3">{r.label}</td>
+                                                <td className="px-4 py-3 text-center">{r.checkin}</td>
+                                                <td className="px-4 py-3 text-center">{r.checkout}</td>
                                                 <td className="px-4 py-3 text-right">{formatRupiah(r.jumlah)}</td>
                                             </tr>
                                         ))}
@@ -209,6 +217,8 @@ export default function LaporanPendapatan({ mode, data, loaded, filters }: Props
                                     <tfoot>
                                         <tr className="border-t-2 font-semibold">
                                             <td className="px-4 py-3">Total</td>
+                                            <td className="px-4 py-3 text-center">{totalCheckin}</td>
+                                            <td className="px-4 py-3 text-center">{totalCheckout}</td>
                                             <td className="px-4 py-3 text-right">{formatRupiah(total)}</td>
                                         </tr>
                                     </tfoot>

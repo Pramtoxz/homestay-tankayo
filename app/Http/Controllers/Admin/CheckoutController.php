@@ -86,8 +86,8 @@ class CheckoutController extends Controller
             return back()->withErrors(['tglcheckout' => 'Tanggal check-out tidak boleh sebelum tanggal check-in.']);
         }
 
-        $grandtotal = max($checkin->reservasi->totalbayar - $validated['potongan'], 0);
         $deposit = $checkin->deposit;
+        $grandtotal = $checkin->reservasi->totalbayar + $validated['potongan'];
         $kekurangan = ($validated['potongan'] > $deposit) ? ($validated['potongan'] - $deposit) : 0;
 
         if ($validated['totalbayar'] < $kekurangan) {
