@@ -4,7 +4,6 @@ export type Room = {
     tipe_id: number;
     harga: number;
     fasilitas: string | null;
-    deskripsi: string | null;
 };
 
 export type TipeWithRooms = {
@@ -12,6 +11,7 @@ export type TipeWithRooms = {
     nama_tipe: string;
     foto: string | null;
     kamar: Room[];
+    deskripsi: string | null;
 };
 
 export type AuthUser = {
@@ -23,7 +23,11 @@ export type AuthUser = {
 };
 
 export const formatRupiah = (n: number) =>
-    new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
+    new Intl.NumberFormat('id-ID', {
+        style: 'currency',
+        currency: 'IDR',
+        minimumFractionDigits: 0,
+    }).format(n);
 
 export function dashboardHref(user: AuthUser | null): string {
     if (!user) {

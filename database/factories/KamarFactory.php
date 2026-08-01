@@ -25,7 +25,6 @@ class KamarFactory extends Factory
             'harga' => fake()->randomElement([150000, 200000, 250000, 300000, 400000, 500000, 650000]),
             'fasilitas' => implode(', ', fake()->randomElements($fasilitasPool, fake()->numberBetween(3, 6))),
             'status_kamar' => fake()->randomElement(['tersedia', 'tersedia', 'tersedia', 'tidak tersedia']),
-            'deskripsi' => fake('id_ID')->sentence(12),
         ];
     }
 }

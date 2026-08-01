@@ -18,7 +18,6 @@ type KamarData = {
     tipe_id: number;
     harga: number;
     fasilitas: string | null;
-    deskripsi: string | null;
     status_kamar: string;
 };
 
@@ -37,7 +36,6 @@ export default function KamarForm({ kamar, nextId, tipeOptions }: Props) {
         tipe_id: kamar?.tipe_id?.toString() ?? (tipeOptions.length > 0 ? tipeOptions[0].id.toString() : ''),
         harga: kamar?.harga?.toString() ?? '',
         fasilitas: kamar?.fasilitas ?? '',
-        deskripsi: kamar?.deskripsi ?? '',
         status_kamar: kamar?.status_kamar ?? 'tersedia',
     });
 
@@ -54,7 +52,6 @@ export default function KamarForm({ kamar, nextId, tipeOptions }: Props) {
             tipe_id: values.tipe_id,
             harga: values.harga,
             fasilitas: values.fasilitas,
-            deskripsi: values.deskripsi,
             status_kamar: values.status_kamar,
         };
 
@@ -139,18 +136,6 @@ export default function KamarForm({ kamar, nextId, tipeOptions }: Props) {
                                     placeholder="AC, TV, WiFi, kamar mandi dalam, dll"
                                 />
                                 {errors.fasilitas && <p className="text-sm text-destructive">{errors.fasilitas}</p>}
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="deskripsi">Deskripsi</Label>
-                                <Input
-                                    id="deskripsi"
-                                    name="deskripsi"
-                                    value={values.deskripsi}
-                                    onChange={handleChange}
-                                    placeholder="Deskripsi kamar"
-                                />
-                                {errors.deskripsi && <p className="text-sm text-destructive">{errors.deskripsi}</p>}
                             </div>
 
                             <div className="space-y-2">

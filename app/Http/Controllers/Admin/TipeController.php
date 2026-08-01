@@ -43,6 +43,7 @@ class TipeController extends Controller
     {
         $validated = $request->validate([
             'nama_tipe' => 'required|string|max:100|unique:tipe,nama_tipe',
+            'deskripsi' => 'nullable|string',
             'foto' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
             'aktif' => 'required|boolean',
         ]);
@@ -68,6 +69,7 @@ class TipeController extends Controller
     {
         $validated = $request->validate([
             'nama_tipe' => 'required|string|max:100|unique:tipe,nama_tipe,'.$tipe->id,
+            'deskripsi' => 'nullable|string',
             'foto' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
             'aktif' => 'required|boolean',
         ]);

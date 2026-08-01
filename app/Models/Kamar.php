@@ -29,7 +29,6 @@ class Kamar extends Model
         'harga',
         'fasilitas',
         'status_kamar',
-        'deskripsi',
     ];
 
     /**

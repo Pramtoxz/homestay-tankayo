@@ -38,7 +38,11 @@ export default function TipeIndex({ tipe, filters }: Props) {
 
     const handleSearch = useCallback(
         (value: string) => {
-            router.get('/admin/tipe', { ...filters, search: value, page: 1 }, { preserveState: true });
+            router.get(
+                '/admin/tipe',
+                { ...filters, search: value, page: 1 },
+                { preserveState: true },
+            );
         },
         [filters],
     );
@@ -51,32 +55,44 @@ export default function TipeIndex({ tipe, filters }: Props) {
 
     const handlePageChange = useCallback(
         (page: number) => {
-            router.get('/admin/tipe', { ...filters, page }, { preserveState: true });
+            router.get(
+                '/admin/tipe',
+                { ...filters, page },
+                { preserveState: true },
+            );
         },
         [filters],
     );
 
     const handlePageSizeChange = useCallback(
         (perPage: number) => {
-            router.get('/admin/tipe', { ...filters, per_page: perPage, page: 1 }, { preserveState: true });
+            router.get(
+                '/admin/tipe',
+                { ...filters, per_page: perPage, page: 1 },
+                { preserveState: true },
+            );
         },
         [filters],
     );
 
     const handleSortChange = useCallback(
         (sortBy: string, sortOrder: 'asc' | 'desc') => {
-            router.get('/admin/tipe', { ...filters, sort_by: sortBy, sort_order: sortOrder, page: 1 }, { preserveState: true });
+            router.get(
+                '/admin/tipe',
+                { ...filters, sort_by: sortBy, sort_order: sortOrder, page: 1 },
+                { preserveState: true },
+            );
         },
         [filters],
     );
 
     const columns: ColumnDef<TipeItem>[] = useMemo(
         () => [
-            {
-                accessorKey: 'id',
-                header: ({ column }) => <SortableHeader title="ID" column={column} />,
-                cell: ({ row }) => <span className="font-mono text-xs">{row.original.id}</span>,
-            },
+            // {
+            //     accessorKey: 'id',
+            //     header: ({ column }) => <SortableHeader title="ID" column={column} />,
+            //     cell: ({ row }) => <span className="font-mono text-xs">{row.original.id}</span>,
+            // },
             {
                 accessorKey: 'foto',
                 header: () => 'Foto',
@@ -93,8 +109,14 @@ export default function TipeIndex({ tipe, filters }: Props) {
             },
             {
                 accessorKey: 'nama_tipe',
-                header: ({ column }) => <SortableHeader title="Nama Tipe" column={column} />,
-                cell: ({ row }) => <span className="font-medium">{row.original.nama_tipe}</span>,
+                header: ({ column }) => (
+                    <SortableHeader title="Nama Tipe" column={column} />
+                ),
+                cell: ({ row }) => (
+                    <span className="font-medium">
+                        {row.original.nama_tipe}
+                    </span>
+                ),
             },
             {
                 accessorKey: 'kamar_count',
@@ -103,9 +125,13 @@ export default function TipeIndex({ tipe, filters }: Props) {
             },
             {
                 accessorKey: 'aktif',
-                header: ({ column }) => <SortableHeader title="Status" column={column} />,
+                header: ({ column }) => (
+                    <SortableHeader title="Status" column={column} />
+                ),
                 cell: ({ row }) => (
-                    <Badge variant={row.original.aktif ? 'default' : 'destructive'}>
+                    <Badge
+                        variant={row.original.aktif ? 'default' : 'destructive'}
+                    >
                         {row.original.aktif ? 'Aktif' : 'Nonaktif'}
                     </Badge>
                 ),
@@ -115,10 +141,22 @@ export default function TipeIndex({ tipe, filters }: Props) {
                 header: () => <div className="text-right">Aksi</div>,
                 cell: ({ row }) => (
                     <div className="flex justify-end gap-2">
-                        <Button variant="outline" size="sm" onClick={() => router.get(`/admin/tipe/${row.original.id}/edit`)}>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                                router.get(
+                                    `/admin/tipe/${row.original.id}/edit`,
+                                )
+                            }
+                        >
                             <Pencil className="h-3 w-3" />
                         </Button>
-                        <Button variant="destructive" size="sm" onClick={() => handleDelete(row.original.id)}>
+                        <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleDelete(row.original.id)}
+                        >
                             <Trash2 className="h-3 w-3" />
                         </Button>
                     </div>
@@ -150,7 +188,9 @@ export default function TipeIndex({ tipe, filters }: Props) {
                     <CardHeader>
                         <div className="flex items-center justify-between">
                             <CardTitle>Data Tipe Kamar</CardTitle>
-                            <Button onClick={() => router.get('/admin/tipe/create')}>
+                            <Button
+                                onClick={() => router.get('/admin/tipe/create')}
+                            >
                                 <Plus className="h-4 w-4" />
                                 Tambah Tipe
                             </Button>
@@ -172,10 +212,16 @@ export default function TipeIndex({ tipe, filters }: Props) {
                             pagination={pagination}
                             sorting={sorting}
                             onSortingChange={(updater) => {
-                                const newSorting = typeof updater === 'function' ? updater(sorting) : updater;
+                                const newSorting =
+                                    typeof updater === 'function'
+                                        ? updater(sorting)
+                                        : updater;
 
                                 if (newSorting.length > 0) {
-                                    handleSortChange(newSorting[0].id, newSorting[0].desc ? 'desc' : 'asc');
+                                    handleSortChange(
+                                        newSorting[0].id,
+                                        newSorting[0].desc ? 'desc' : 'asc',
+                                    );
                                 }
                             }}
                             onPageChange={handlePageChange}
