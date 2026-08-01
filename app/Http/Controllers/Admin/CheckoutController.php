@@ -122,11 +122,16 @@ class CheckoutController extends Controller
 
         Carbon::setLocale('id');
 
+        $tglCheckin = Carbon::parse($checkout->checkin->reservasi->tglcheckin);
+        $tglCheckout = Carbon::parse($checkout->tglcheckout);
+        $lamaInap = max($tglCheckin->diffInDays($tglCheckout), 1);
+
         $pdf = Pdf::loadView('pdf.faktur-checkout', [
             'checkout' => $checkout,
             'reservasi' => $checkout->checkin->reservasi,
+            'lamaInap' => $lamaInap,
             'logoPath' => public_path('assets/images/tankayo.png'),
-            'tglCheckout' => Carbon::parse($checkout->tglcheckout)->translatedFormat('d F Y'),
+            'tglCheckout' => $tglCheckout->translatedFormat('d F Y'),
             'tglCetak' => Carbon::now()->translatedFormat('d F Y H:i'),
         ])->setPaper('a4', 'portrait');
 

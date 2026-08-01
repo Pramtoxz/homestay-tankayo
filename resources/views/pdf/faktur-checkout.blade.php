@@ -246,6 +246,10 @@
                         <td class="kv-label">Tipe Kamar</td>
                         <td>: {{ $reservasi->kamar->tipe->nama_tipe ?? '-' }}</td>
                     </tr>
+                    <tr>
+                        <td class="kv-label">Lama Inap</td>
+                        <td>: {{ $lamaInap }} malam</td>
+                    </tr>
                 </table>
             </td>
         </tr>
@@ -259,17 +263,18 @@
             </tr>
         </thead>
         <tbody>
-            @if ($checkout->potongan > 0)
-                @php
-                    $depositVal = $checkout->checkin->deposit ?? 0;
-                    $potonganVal = $checkout->potongan;
-                    $grandtotalVal = ($reservasi->totalbayar ?? 0) + $potonganVal;
-                    $kekuranganVal = $potonganVal > $depositVal ? $potonganVal - $depositVal : 0;
-                @endphp
-                <tr>
-                    <td>Total Reservasi Yang Sudah Dibayar Lunas Di Muka</td>
-                    <td style="text-align: right;">Rp {{ number_format($reservasi->totalbayar ?? 0, 0, ',', '.') }}</td>
-                </tr>
+            @php
+                $depositVal = $checkout->checkin->deposit ?? 0;
+                $potonganVal = $checkout->potongan;
+                $grandtotalVal = ($reservasi->totalbayar ?? 0) + $potonganVal;
+                $kekuranganVal = $potonganVal > $depositVal ? $potonganVal - $depositVal : 0;
+                $kembalianVal = $depositVal > $potonganVal ? $depositVal - $potonganVal : 0;
+            @endphp
+            <tr>
+                <td>Total Reservasi Yang Sudah Dibayar Lunas Di Muka</td>
+                <td style="text-align: right;">Rp {{ number_format($reservasi->totalbayar ?? 0, 0, ',', '.') }}</td>
+            </tr>
+            @if ($potonganVal > 0)
                 <tr class="deduction">
                     <td>Potongan/Denda</td>
                     <td style="text-align: right;">Rp {{ number_format($potonganVal, 0, ',', '.') }}</td>
@@ -279,28 +284,23 @@
                     <td style="text-align: right; font-weight: bold;">Rp
                         {{ number_format($grandtotalVal, 0, ',', '.') }}</td>
                 </tr>
+            @endif
+            @if ($depositVal > 0)
                 <tr>
                     <td>Deposit Yang Sudah Masuk</td>
                     <td style="text-align: right;">Rp {{ number_format($depositVal, 0, ',', '.') }}</td>
                 </tr>
-                @if ($kekuranganVal > 0)
-                    <tr class="kekurangan">
-                        <td>Kekurangan Yang Harus Dibayar Tamu</td>
-                        <td style="text-align: right;">Rp {{ number_format($kekuranganVal, 0, ',', '.') }}</td>
-                    </tr>
-                @endif
-                @if ($depositVal > $potonganVal)
-                    <tr class="kembalian">
-                        <td>Deposit Yang Harus Dikembalikan Ke Tamu</td>
-                        <td style="text-align: right;">Rp {{ number_format($depositVal - $potonganVal, 0, ',', '.') }}
-                        </td>
-                    </tr>
-                @endif
-            @else
-                <tr>
-                    <td>Total Reservasi</td>
-                    <td style="text-align: right;">Rp {{ number_format($reservasi->totalbayar ?? 0, 0, ',', '.') }}
-                    </td>
+            @endif
+            @if ($kekuranganVal > 0)
+                <tr class="kekurangan">
+                    <td>Kekurangan Yang Harus Dibayar Tamu</td>
+                    <td style="text-align: right;">Rp {{ number_format($kekuranganVal, 0, ',', '.') }}</td>
+                </tr>
+            @endif
+            @if ($kembalianVal > 0)
+                <tr class="kembalian">
+                    <td>Deposit Yang Harus Dikembalikan Ke Tamu</td>
+                    <td style="text-align: right;">Rp {{ number_format($kembalianVal, 0, ',', '.') }}</td>
                 </tr>
             @endif
         </tbody>

@@ -9,16 +9,46 @@ use App\Models\Kamar;
 use App\Models\Reservasi;
 use App\Models\Tamu;
 use App\Services\BookingService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class DashboardController extends Controller
 {
-    public function index(): Response
+    public function index(Request $request): Response
     {
         BookingService::expireOverdueBookings();
 
         $today = now()->toDateString();
+
+        $tglcheckin = $request->string('tglcheckin')->toString();
+        $availabilityLoaded = false;
+        $tipeAvailability = [];
+
+        if ($tglcheckin !== '') {
+            $tglcheckout = Carbon::parse($tglcheckin)->addDay()->toDateString();
+            $tipeAvailability = BookingService::tipeSummary($tglcheckin, $tglcheckout);
+            $availabilityLoaded = true;
+        }
+
+        $rangeStart = now()->subDays(13)->startOfDay();
+        $revenueByDate = Checkout::whereBetween('tglcheckout', [$rangeStart->toDateString(), $today])
+            ->selectRaw('tglcheckout, SUM(grandtotal) as total')
+            ->groupBy('tglcheckout')
+            ->pluck('total', 'tglcheckout');
+
+        Carbon::setLocale('id');
+        $revenueTrend = collect(range(0, 13))->map(function (int $i) use ($rangeStart, $revenueByDate) {
+            $date = $rangeStart->copy()->addDays($i);
+            $key = $date->toDateString();
+
+            return [
+                'tanggal' => $key,
+                'label' => $date->translatedFormat('d M'),
+                'total' => (float) ($revenueByDate[$key] ?? 0),
+            ];
+        })->values()->all();
 
         return Inertia::render('admin/dashboard', [
             'stats' => [
@@ -48,6 +78,12 @@ class DashboardController extends Controller
                 ->where('tglcheckout', '<=', $today)
                 ->limit(5)
                 ->get(),
+            'tipe_availability' => $tipeAvailability,
+            'availability_loaded' => $availabilityLoaded,
+            'availability_filters' => [
+                'tglcheckin' => $tglcheckin,
+            ],
+            'revenue_trend' => $revenueTrend,
         ]);
     }
 }

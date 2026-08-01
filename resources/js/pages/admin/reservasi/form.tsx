@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { submitFormInNewTab } from '@/lib/utils';
 
 type TamuOption = { nik: string; nama: string; alamat: string; nohp: string };
 type TipeInfo = { id: number; nama_tipe: string };
@@ -140,12 +141,16 @@ export default function ReservasiForm({ reservasi, tipeOptions }: Props) {
                 status: values.status,
             });
         } else {
-            router.post('/admin/reservasi', {
-                ...values,
-                totalbayar: autoTotal !== null ? autoTotal.toString() : values.totalbayar,
+            submitFormInNewTab('/admin/reservasi', {
                 nik: selectedTamu?.nik ?? '',
                 idkamar: selectedKamar?.id_kamar ?? '',
+                tglcheckin: values.tglcheckin,
+                tglcheckout: values.tglcheckout,
+                totalbayar: autoTotal !== null ? autoTotal.toString() : values.totalbayar,
+                tipe: values.tipe,
             });
+
+            router.get('/admin/reservasi');
         }
     };
 

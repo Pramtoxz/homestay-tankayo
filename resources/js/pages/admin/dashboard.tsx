@@ -1,7 +1,14 @@
-import { Head } from '@inertiajs/react';
-import { BedDouble, Users, CalendarCheck, CalendarMinus, TrendingUp } from 'lucide-react';
+import { Head, router } from '@inertiajs/react';
+import { BedDouble, Users, CalendarCheck, CalendarMinus, TrendingUp, Search, DoorOpen, LogIn, LogOut } from 'lucide-react';
+import { useState } from 'react';
+import { Bar, BarChart, CartesianGrid, XAxis } from 'recharts';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import type { ChartConfig } from '@/components/ui/chart';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { dashboard } from '@/routes';
 
 type Stats = {
@@ -24,63 +31,207 @@ type ReservasiItem = {
     tglcheckout: string;
 };
 
+type TipeAvailability = {
+    tipe_id: number;
+    nama_tipe: string;
+    total: number;
+    tersedia: number;
+};
+
+type RevenuePoint = {
+    tanggal: string;
+    label: string;
+    total: number;
+};
+
 type Props = {
     stats: Stats;
     reservasi_hari_ini: ReservasiItem[];
     checkin_today: ReservasiItem[];
     checkout_today: ReservasiItem[];
+    tipe_availability: TipeAvailability[];
+    availability_loaded: boolean;
+    availability_filters: {
+        tglcheckin: string;
+    };
+    revenue_trend: RevenuePoint[];
 };
 
 const formatRupiah = (n: number) =>
     new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
 
 const statusColor: Record<string, string> = {
-    diproses: 'bg-yellow-100 text-yellow-800',
-    diterima: 'bg-green-100 text-green-800',
-    ditolak: 'bg-red-100 text-red-800',
-    checkin: 'bg-blue-100 text-blue-800',
-    selesai: 'bg-gray-100 text-gray-800',
-    cancel: 'bg-red-100 text-red-800',
-    limit: 'bg-orange-100 text-orange-800',
+    diproses: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-500/15 dark:text-yellow-400',
+    diterima: 'bg-green-100 text-green-800 dark:bg-green-500/15 dark:text-green-400',
+    ditolak: 'bg-red-100 text-red-800 dark:bg-red-500/15 dark:text-red-400',
+    checkin: 'bg-blue-100 text-blue-800 dark:bg-blue-500/15 dark:text-blue-400',
+    selesai: 'bg-gray-100 text-gray-800 dark:bg-gray-500/15 dark:text-gray-400',
+    cancel: 'bg-red-100 text-red-800 dark:bg-red-500/15 dark:text-red-400',
+    limit: 'bg-orange-100 text-orange-800 dark:bg-orange-500/15 dark:text-orange-400',
 };
 
-export default function Dashboard({ stats, reservasi_hari_ini, checkin_today, checkout_today }: Props) {
+const revenueChartConfig = {
+    total: {
+        label: 'Pendapatan',
+        color: 'var(--chart-1)',
+    },
+} satisfies ChartConfig;
+
+export default function Dashboard({
+    stats,
+    reservasi_hari_ini,
+    checkin_today,
+    checkout_today,
+    tipe_availability,
+    availability_loaded,
+    availability_filters,
+    revenue_trend,
+}: Props) {
+    const [tglcheckin, setTglcheckin] = useState(availability_filters.tglcheckin);
+
+    const handleTampilkan = () => {
+        router.get(
+            '/dashboard',
+            { tglcheckin },
+            { preserveState: true, preserveScroll: true, only: ['tipe_availability', 'availability_loaded', 'availability_filters'] },
+        );
+    };
+
     return (
         <>
             <Head title="Dashboard" />
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-6">
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
                     <Card>
-                        <CardHeader className="flex flex-row items-center justify-between pb-2">
-                            <CardTitle className="text-sm font-medium">Total Tamu</CardTitle>
-                            <Users className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{stats.total_tamu}</div>
+                        <CardContent className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                                <Users className="h-5 w-5" />
+                            </div>
+                            <div>
+                                <p className="text-sm text-muted-foreground">Total Tamu</p>
+                                <p className="text-2xl font-bold">{stats.total_tamu}</p>
+                            </div>
                         </CardContent>
                     </Card>
 
                     <Card>
-                        <CardHeader className="flex flex-row items-center justify-between pb-2">
-                            <CardTitle className="text-sm font-medium">Kamar Tersedia</CardTitle>
-                            <BedDouble className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{stats.kamar_tersedia}</div>
-                            <p className="text-xs text-muted-foreground">dari {stats.total_kamar} kamar</p>
+                        <CardContent className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                                <BedDouble className="h-5 w-5" />
+                            </div>
+                            <div>
+                                <p className="text-sm text-muted-foreground">Kamar Tersedia</p>
+                                <p className="text-2xl font-bold">
+                                    {stats.kamar_tersedia}
+                                    <span className="text-sm font-normal text-muted-foreground"> / {stats.total_kamar}</span>
+                                </p>
+                            </div>
                         </CardContent>
                     </Card>
 
                     <Card>
-                        <CardHeader className="flex flex-row items-center justify-between pb-2">
-                            <CardTitle className="text-sm font-medium">Pendapatan Bulan Ini</CardTitle>
-                            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{formatRupiah(stats.pendapatan_bulan_ini)}</div>
+                        <CardContent className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent/15 text-accent-foreground">
+                                <CalendarCheck className="h-5 w-5" />
+                            </div>
+                            <div>
+                                <p className="text-sm text-muted-foreground">Reservasi Hari Ini</p>
+                                <p className="text-2xl font-bold">{stats.reservasi_hari_ini}</p>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardContent className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                                <LogIn className="h-5 w-5" />
+                            </div>
+                            <div>
+                                <p className="text-sm text-muted-foreground">Check-In Hari Ini</p>
+                                <p className="text-2xl font-bold">{stats.checkin_hari_ini}</p>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardContent className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                                <LogOut className="h-5 w-5" />
+                            </div>
+                            <div>
+                                <p className="text-sm text-muted-foreground">Check-Out Hari Ini</p>
+                                <p className="text-2xl font-bold">{stats.checkout_hari_ini}</p>
+                            </div>
                         </CardContent>
                     </Card>
                 </div>
+
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between">
+                        <div>
+                            <CardTitle className="text-sm font-medium">Pendapatan 14 Hari Terakhir</CardTitle>
+                            <p className="text-xs text-muted-foreground">Bulan ini: {formatRupiah(stats.pendapatan_bulan_ini)}</p>
+                        </div>
+                        <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <ChartContainer config={revenueChartConfig} className="aspect-auto h-[220px] w-full">
+                            <BarChart data={revenue_trend} margin={{ left: 0, right: 0 }}>
+                                <CartesianGrid vertical={false} />
+                                <XAxis dataKey="label" tickLine={false} axisLine={false} tickMargin={8} interval="preserveStartEnd" />
+                                <ChartTooltip
+                                    cursor={false}
+                                    content={<ChartTooltipContent formatter={(value) => formatRupiah(Number(value))} />}
+                                />
+                                <Bar dataKey="total" fill="var(--color-total)" radius={4} maxBarSize={24} />
+                            </BarChart>
+                        </ChartContainer>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader>
+                        <div className="flex flex-wrap items-end gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="availability_tglcheckin">Silahkan Pilih Tanggal</Label>
+                                <Input
+                                    id="availability_tglcheckin"
+                                    type="date"
+                                    value={tglcheckin}
+                                    onChange={(e) => setTglcheckin(e.target.value)}
+                                />
+                            </div>
+                            <Button disabled={!tglcheckin} onClick={handleTampilkan}>
+                                <Search className="h-4 w-4" />
+                                Tampilkan
+                            </Button>
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        {!availability_loaded ? (
+                            <div className="flex flex-col items-center justify-center py-10 text-center">
+                                <DoorOpen className="mb-3 h-10 w-10 text-muted-foreground/50" />
+                                <p className="text-sm text-muted-foreground">
+                                    Silakan pilih tanggal check-in terlebih dahulu, lalu klik Tampilkan.
+                                </p>
+                            </div>
+                        ) : tipe_availability.length === 0 ? (
+                            <p className="text-sm text-muted-foreground">Tidak ada tipe kamar aktif.</p>
+                        ) : (
+                            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                                {tipe_availability.map((t) => (
+                                    <div key={t.tipe_id} className="rounded-md border p-3">
+                                        <p className="text-sm font-medium">{t.nama_tipe}</p>
+                                        <p className="text-2xl font-bold">
+                                            {t.tersedia}
+                                            <span className="text-sm font-normal text-muted-foreground"> / {t.total} tersedia</span>
+                                        </p>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
 
                 <div className="grid gap-4 md:grid-cols-3">
                     <Card>
@@ -96,7 +247,10 @@ export default function Dashboard({ stats, reservasi_hari_ini, checkin_today, ch
                                 <ul className="space-y-2">
                                     {reservasi_hari_ini.map((r) => (
                                         <li key={r.idbooking} className="flex items-center justify-between text-sm">
-                                            <span>{r.tamu?.nama ?? '-'}</span>
+                                            <span>
+                                                {r.tamu?.nama ?? '-'}
+                                                <span className="text-muted-foreground"> · {r.kamar?.nama ?? '-'}</span>
+                                            </span>
                                             <Badge className={statusColor[r.status] ?? ''}>{r.status}</Badge>
                                         </li>
                                     ))}
@@ -108,7 +262,7 @@ export default function Dashboard({ stats, reservasi_hari_ini, checkin_today, ch
                     <Card>
                         <CardHeader>
                             <CardTitle className="text-sm font-medium flex items-center gap-2">
-                                <CalendarCheck className="h-4 w-4" /> Check-In Hari Ini
+                                <CalendarCheck className="h-4 w-4" /> Check-In Hari Ini ({stats.checkin_hari_ini})
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
@@ -130,7 +284,7 @@ export default function Dashboard({ stats, reservasi_hari_ini, checkin_today, ch
                     <Card>
                         <CardHeader>
                             <CardTitle className="text-sm font-medium flex items-center gap-2">
-                                <CalendarMinus className="h-4 w-4" /> Check-Out Hari Ini
+                                <CalendarMinus className="h-4 w-4" /> Check-Out Hari Ini ({stats.checkout_hari_ini})
                             </CardTitle>
                         </CardHeader>
                         <CardContent>

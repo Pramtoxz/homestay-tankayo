@@ -32,6 +32,8 @@ type SearchPickerDialogProps<T> = {
     getRowKey: (item: T) => string | number;
     onSelect: (item: T) => void;
     emptyMessage?: string;
+    contentClassName?: string;
+    tableMaxHeightClassName?: string;
 };
 
 export function SearchPickerDialog<T>({
@@ -47,6 +49,8 @@ export function SearchPickerDialog<T>({
     getRowKey,
     onSelect,
     emptyMessage = 'Tidak ada data.',
+    contentClassName = 'sm:max-w-2xl',
+    tableMaxHeightClassName = 'max-h-96',
 }: SearchPickerDialogProps<T>) {
     const [search, setSearch] = React.useState('');
     const [page, setPage] = React.useState(1);
@@ -106,7 +110,7 @@ export function SearchPickerDialog<T>({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-2xl">
+            <DialogContent className={contentClassName}>
                 <DialogHeader>
                     <DialogTitle>{title}</DialogTitle>
                 </DialogHeader>
@@ -148,7 +152,7 @@ export function SearchPickerDialog<T>({
                     ))}
                 </div>
 
-                <div className="max-h-96 overflow-y-auto rounded-md border">
+                <div className={`${tableMaxHeightClassName} overflow-y-auto rounded-md border`}>
                     <Table>
                         <TableHeader>
                             <TableRow>

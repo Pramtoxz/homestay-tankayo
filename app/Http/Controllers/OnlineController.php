@@ -6,7 +6,6 @@ use App\Models\Kamar;
 use App\Models\Rekening;
 use App\Models\Reservasi;
 use App\Models\Tamu;
-use App\Models\Tipe;
 use App\Services\BookingService;
 use App\Services\IdGenerator;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -91,30 +90,7 @@ class OnlineController extends Controller
             'tglcheckout' => 'required|date|after:tglcheckin',
         ]);
 
-        $tipes = Tipe::where('aktif', true)->orderBy('nama_tipe')->get();
-
-        $summary = $tipes->map(function (Tipe $tipe) use ($validated) {
-            $query = Kamar::where('tipe_id', $tipe->id)->where('status_kamar', 'tersedia');
-
-            $total = (clone $query)->count();
-
-            $tersedia = (clone $query)->whereDoesntHave('reservasi', function ($r) use ($validated) {
-                $r->whereNotIn('status', ['ditolak', 'cancel', 'selesai', 'limit'])
-                    ->where('tglcheckin', '<', $validated['tglcheckout'])
-                    ->where('tglcheckout', '>', $validated['tglcheckin']);
-            })->count();
-
-            return [
-                'tipe_id' => $tipe->id,
-                'nama_tipe' => $tipe->nama_tipe,
-                'foto' => $tipe->foto,
-                'total' => $total,
-                'tersedia' => $tersedia,
-                'harga_mulai' => (clone $query)->orderBy('harga')->value('harga'),
-            ];
-        });
-
-        return response()->json($summary->values());
+        return response()->json(BookingService::tipeSummary($validated['tglcheckin'], $validated['tglcheckout']));
     }
 
     public function kamarByTipe(Request $request): JsonResponse
