@@ -1,12 +1,10 @@
 import { Head, router } from '@inertiajs/react';
-import { BedDouble, Users, CalendarCheck, CalendarMinus, TrendingUp, Search, DoorOpen, LogIn, LogOut } from 'lucide-react';
+import { BedDouble, Users, CalendarCheck, CalendarMinus, Search, DoorOpen, LogIn, LogOut } from 'lucide-react';
 import { useState } from 'react';
-import { Bar, BarChart, CartesianGrid, XAxis } from 'recharts';
+
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import type { ChartConfig } from '@/components/ui/chart';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { dashboard } from '@/routes';
@@ -38,12 +36,6 @@ type TipeAvailability = {
     tersedia: number;
 };
 
-type RevenuePoint = {
-    tanggal: string;
-    label: string;
-    total: number;
-};
-
 type Props = {
     stats: Stats;
     reservasi_hari_ini: ReservasiItem[];
@@ -54,11 +46,7 @@ type Props = {
     availability_filters: {
         tglcheckin: string;
     };
-    revenue_trend: RevenuePoint[];
 };
-
-const formatRupiah = (n: number) =>
-    new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
 
 const statusColor: Record<string, string> = {
     diproses: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-500/15 dark:text-yellow-400',
@@ -70,13 +58,6 @@ const statusColor: Record<string, string> = {
     limit: 'bg-orange-100 text-orange-800 dark:bg-orange-500/15 dark:text-orange-400',
 };
 
-const revenueChartConfig = {
-    total: {
-        label: 'Pendapatan',
-        color: 'var(--chart-1)',
-    },
-} satisfies ChartConfig;
-
 export default function Dashboard({
     stats,
     reservasi_hari_ini,
@@ -85,7 +66,6 @@ export default function Dashboard({
     tipe_availability,
     availability_loaded,
     availability_filters,
-    revenue_trend,
 }: Props) {
     const [tglcheckin, setTglcheckin] = useState(availability_filters.tglcheckin);
 
@@ -169,23 +149,45 @@ export default function Dashboard({
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between">
                         <div>
-                            <CardTitle className="text-sm font-medium">Pendapatan 14 Hari Terakhir</CardTitle>
-                            <p className="text-xs text-muted-foreground">Bulan ini: {formatRupiah(stats.pendapatan_bulan_ini)}</p>
+                            <CardTitle className="text-sm font-medium">Ketersediaan Kamar Hari Ini</CardTitle>
+                            <CardDescription>
+                                {stats.kamar_tersedia} dari {stats.total_kamar} kamar tersedia
+                            </CardDescription>
                         </div>
-                        <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                        <BedDouble className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <ChartContainer config={revenueChartConfig} className="aspect-auto h-[220px] w-full">
-                            <BarChart data={revenue_trend} margin={{ left: 0, right: 0 }}>
-                                <CartesianGrid vertical={false} />
-                                <XAxis dataKey="label" tickLine={false} axisLine={false} tickMargin={8} interval="preserveStartEnd" />
-                                <ChartTooltip
-                                    cursor={false}
-                                    content={<ChartTooltipContent formatter={(value) => formatRupiah(Number(value))} />}
-                                />
-                                <Bar dataKey="total" fill="var(--color-total)" radius={4} maxBarSize={24} />
-                            </BarChart>
-                        </ChartContainer>
+                        <div className="space-y-4">
+                            <div className="space-y-2">
+                                <div className="flex items-center justify-between text-sm">
+                                    <span className="text-muted-foreground">Tingkat ketersediaan</span>
+                                    <span className="font-semibold">
+                                        {stats.total_kamar > 0
+                                            ? Math.round((stats.kamar_tersedia / stats.total_kamar) * 100)
+                                            : 0}
+                                        %
+                                    </span>
+                                </div>
+                                <div className="bg-secondary h-3 w-full overflow-hidden rounded-full">
+                                    <div
+                                        className="bg-primary h-full rounded-full transition-all duration-500"
+                                        style={{
+                                            width: `${stats.total_kamar > 0 ? (stats.kamar_tersedia / stats.total_kamar) * 100 : 0}%`,
+                                        }}
+                                    />
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="rounded-lg border p-3">
+                                    <p className="text-xs text-muted-foreground">Tersedia</p>
+                                    <p className="text-2xl font-bold text-green-600 dark:text-green-400">{stats.kamar_tersedia}</p>
+                                </div>
+                                <div className="rounded-lg border p-3">
+                                    <p className="text-xs text-muted-foreground">Terisi</p>
+                                    <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">{stats.kamar_terisi}</p>
+                                </div>
+                            </div>
+                        </div>
                     </CardContent>
                 </Card>
 
