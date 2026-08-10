@@ -1,0 +1,1 @@
+var e=e=>new Intl.NumberFormat(`id-ID`,{style:`currency`,currency:`IDR`,minimumFractionDigits:0}).format(e);function t(e){return e?e.role===`user`?`/portal`:`/dashboard`:`/login`}function n(e){return e?e.role===`user`?`/portal/booking`:`/login`:`/register`}function r(e){return e&&e.role===`user`?`Booking Sekarang`:e?`Booking`:`Mulai Booking`}export{e as i,r as n,t as r,n as t};
