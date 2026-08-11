@@ -58,7 +58,7 @@ class DashboardController extends Controller
                 'kamar_terisi' => Kamar::where('status_kamar', 'tidak tersedia')->count(),
                 'reservasi_hari_ini' => Reservasi::whereDate('created_at', $today)->count(),
                 'checkin_hari_ini' => Checkin::whereDate('created_at', $today)->count(),
-                'checkout_hari_ini' => Checkout::whereDate('tglcheckout', $today)->count(),
+                'checkout_hari_ini' => Checkout::whereDate('created_at', $today)->count(),
                 'pendapatan_bulan_ini' => Checkout::whereMonth('tglcheckout', now()->month)
                     ->whereYear('tglcheckout', now()->year)
                     ->sum('grandtotal'),
