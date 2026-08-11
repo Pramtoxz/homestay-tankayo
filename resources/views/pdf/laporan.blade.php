@@ -210,6 +210,12 @@
                     <th style="width: 16%; text-align: center;">Total Reservasi</th>
                     <th style="width: 16%; text-align: center;">Total Checkout</th>
                     <th style="width: 34%; text-align: right;">Jumlah</th>
+                @elseif($type === 'ketersediaan-kamar')
+                    <th style="width: 10%;">No</th>
+                    <th style="width: 40%;">Tipe Kamar</th>
+                    <th style="width: 16.67%; text-align: center;">Total Kamar</th>
+                    <th style="width: 16.67%; text-align: center;">Terisi</th>
+                    <th style="width: 16.66%; text-align: center;">Tersedia</th>
                 @endif
             </tr>
         </thead>
@@ -267,6 +273,12 @@
                         <td class="text-center">{{ $row['reservasi'] }}</td>
                         <td class="text-center">{{ $row['checkout'] }}</td>
                         <td class="text-right">Rp {{ number_format($row['jumlah'], 0, ',', '.') }}</td>
+                    @elseif($type === 'ketersediaan-kamar')
+                        <td>{{ $loop->iteration }}</td>
+                        <td>{{ $row['nama_tipe'] }}</td>
+                        <td class="text-center">{{ $row['total_kamar'] }}</td>
+                        <td class="text-center">{{ $row['terisi'] }}</td>
+                        <td class="text-center">{{ $row['tersedia'] }}</td>
                     @endif
                 </tr>
             @empty

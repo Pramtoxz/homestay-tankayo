@@ -43,6 +43,7 @@ Route::middleware('auth')->group(function () {
     // Laporan — admin + pimpinan
     Route::middleware('role:admin,pimpinan')->prefix('laporan')->name('laporan.')->group(function () {
         Route::get('kamar', [LaporanController::class, 'kamar'])->name('kamar');
+        Route::get('ketersediaan-kamar', [LaporanController::class, 'ketersediaanKamar'])->name('ketersediaan-kamar');
         Route::get('tamu', [LaporanController::class, 'tamu'])->name('tamu');
         Route::get('reservasi', [LaporanController::class, 'reservasi'])->name('reservasi');
         Route::get('checkin', [LaporanController::class, 'checkin'])->name('checkin');

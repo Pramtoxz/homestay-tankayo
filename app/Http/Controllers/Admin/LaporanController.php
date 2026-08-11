@@ -8,6 +8,7 @@ use App\Models\Checkout;
 use App\Models\Kamar;
 use App\Models\Reservasi;
 use App\Models\Tamu;
+use App\Models\Tipe;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -43,6 +44,13 @@ class LaporanController extends Controller
 
         return Inertia::render('admin/laporan/tamu', [
             'data' => $data,
+        ]);
+    }
+
+    public function ketersediaanKamar(): Response
+    {
+        return Inertia::render('admin/laporan/ketersediaan-kamar', [
+            'data' => $this->getKetersediaanKamarData(),
         ]);
     }
 
@@ -167,16 +175,17 @@ class LaporanController extends Controller
 
     public function exportPdf(Request $request, string $type): HttpResponse
     {
-        if (! in_array($type, ['kamar', 'tamu', 'reservasi', 'checkin', 'checkout', 'pendapatan'], true)) {
+        if (! in_array($type, ['kamar', 'tamu', 'reservasi', 'checkin', 'checkout', 'pendapatan', 'ketersediaan-kamar'], true)) {
             abort(404);
         }
 
         $periode = '';
 
-        if (in_array($type, ['kamar', 'tamu'], true)) {
+        if (in_array($type, ['kamar', 'tamu', 'ketersediaan-kamar'], true)) {
             $data = match ($type) {
                 'kamar' => Kamar::with('tipe:id,nama_tipe')->select('id_kamar', 'tipe_id', 'harga', 'status_kamar')->get(),
                 'tamu' => Tamu::select('nik', 'nama', 'jk', 'nohp', 'alamat')->get(),
+                'ketersediaan-kamar' => $this->getKetersediaanKamarData(),
             };
         } elseif ($type === 'pendapatan') {
             $mode = $request->input('mode', 'tanggal');
@@ -237,6 +246,7 @@ class LaporanController extends Controller
             'checkin' => 'Laporan Check-in',
             'checkout' => 'Laporan Check-out',
             'pendapatan' => 'Laporan Pendapatan',
+            'ketersediaan-kamar' => 'Laporan Ketersediaan Kamar',
         ];
 
         $columnLabel = null;
@@ -280,6 +290,27 @@ class LaporanController extends Controller
         }
 
         return [$request->input('dari'), $request->input('sampai')];
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function getKetersediaanKamarData(): array
+    {
+        return Tipe::withCount([
+            'kamar as total_kamar',
+            'kamar as tersedia' => fn ($q) => $q->where('status_kamar', 'tersedia'),
+        ])
+            ->orderBy('nama_tipe')
+            ->get()
+            ->map(fn (Tipe $t) => [
+                'nama_tipe' => $t->nama_tipe,
+                'total_kamar' => $t->total_kamar,
+                'tersedia' => $t->tersedia,
+                'terisi' => $t->total_kamar - $t->tersedia,
+            ])
+            ->values()
+            ->all();
     }
 
     /**
